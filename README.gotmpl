@@ -37,11 +37,11 @@ type: application
 home: `app-home-page-link`
 maintainers:
   - name: DevOps
-    email: devops@ezto.io
+    email: devops@example.com
 dependencies:
   - name: tpllib
     version: 1.2.0
-    repository: oci://registry.ezto.io/helm
+    repository: oci://registry.example.com/helm
 icon: `app-logo`
 appVersion: `app-version`
 deprecated: false
@@ -127,8 +127,8 @@ mounts:
   > Always enclose template expressions in quotes in `values.yaml` (e.g. `"{{ "{{" }} $.Values.component }}.{{ "{{" }} $.Values.global.routes.domain {{ "}}" }}"`) so YAML parses them as valid strings. Root scope `$` provides access to top-level attributes including `.Values.global`, `.Values.component`, `.Release.Name`, and `.Release.Namespace`.
 
 - **Cross-Service Sibling Resource Naming (`tpl.resource.siblingName`)**:
-  In microservices architectures deployed under a shared product or release prefix (e.g. `zentre-order-backend`), services frequently need to reference sibling Kubernetes resources (e.g. `zentre-cart-backend`, `zentre-redis`, `zentre-auth-svc`).
-  - **Difference from `tpl.resource.name`**: Standard resource naming via `tpl.resource.name` automatically appends the current chart's component name (`<release>-<component>-<name>`). Using it to reference another service results in an invalid name like `zentre-order-backend-cart-backend`.
+  In microservices architectures deployed under a shared product or release prefix (e.g. `myapp-order-backend`), services frequently need to reference sibling Kubernetes resources (e.g. `myapp-cart-backend`, `myapp-redis`, `myapp-auth-svc`).
+  - **Difference from `tpl.resource.name`**: Standard resource naming via `tpl.resource.name` automatically appends the current chart's component name (`<release>-<component>-<name>`). Using it to reference another service results in an invalid name like `myapp-order-backend-cart-backend`.
   - **Purpose of `tpl.resource.siblingName`**: Generates a resource name scoped to the product/release prefix **without** the caller's component name:
     ```yaml
     {{`{{- define "tpl.resource.siblingName" -}}`}}
@@ -136,18 +136,18 @@ mounts:
     {{`{{- end }}`}}
     ```
   - **Resolution Mechanics**:
-    - Current Release: `zentre-order-backend`
-    - `global.releaseNameLength`: `6` (length of product prefix `zentre`)
+    - Current Release: `myapp-order-backend`
+    - `global.releaseNameLength`: `5` (length of product prefix `myapp`)
     - Sibling name parameter `.name`: `cart-backend`
-    - Output Service Name: `zentre-cart-backend`
+    - Output Service Name: `myapp-cart-backend`
 
   - **Example Usage in `values.yaml`**:
     ```yaml
     configmapEnvs: |
-      # Auto-resolves sibling service DNS: zentre-cart-backend:8080
+      # Auto-resolves sibling service DNS: myapp-cart-backend:8080
       CART_SERVICE_URL=http://{{`{{ include "tpl.resource.siblingName" (merge (dict "name" "cart-backend") $) }}`}}:8080
 
-      # Auto-resolves sibling Redis service: zentre-redis-master:6379
+      # Auto-resolves sibling Redis service: myapp-redis-master:6379
       REDIS_HOST={{`{{ include "tpl.resource.siblingName" (merge (dict "name" "redis-master") $) }}`}}
     ```
 

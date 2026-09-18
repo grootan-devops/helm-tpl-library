@@ -1,0 +1,26 @@
+# Container naming scheme: <component>[-<subComponent>]-<key>, with an `init-`
+# prefix for init containers. Explicit `name:` still wins outright.
+component: "shop"
+subComponent: "api"
+
+initContainers:
+  # `main` is reserved for the single main workload container: an init container
+  # named `main` is rejected at template time. Name it for what it does.
+  db-migration:
+    image:
+      repository: "acme/migrator"
+      tag: "0.9.0"
+
+containers:
+  main:
+    image:
+      repository: "acme/shop-api"
+  sidecar-logger:
+    name: "log-shipper"
+    image:
+      repository: "fluent/fluent-bit"
+      tag: "2.2.0"
+  metrics:
+    image:
+      repository: "acme/exporter"
+      tag: "1.0.0"

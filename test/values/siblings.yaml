@@ -1,0 +1,22 @@
+# Cross-service references through tpl.resource.siblingName, the pattern real consumer
+# charts use, plus a hardcoded override proving the `default` fallback flips.
+global:
+  releaseNameLength: 6
+
+access:
+  internalUrl: ""
+kb:
+  # Hardcoded: must override the siblingName-derived default.
+  internalUrl: "http://kb.external.svc.cluster.local:8080"
+  secret: "kb-shared-secret"
+
+containers:
+  main:
+    image:
+      repository: "acme/shop-api"
+    configmapEnvs: |
+      ACCESS_HOST_INTERNAL: "{{ tpl .Values.access.internalUrl $ | default (printf "http://%s" (include "tpl.resource.siblingName" (merge (dict "name" "access") .))) }}"
+      KB_HOST_INTERNAL: "{{ tpl .Values.kb.internalUrl $ | default (printf "http://%s" (include "tpl.resource.siblingName" (merge (dict "name" "kb-backend") .))) }}"
+      SELF_HOST: "http://{{ include "tpl.resource.name" . }}"
+    secretEnvs: |
+      KB_SECRET: "{{ tpl .Values.kb.secret $ }}"

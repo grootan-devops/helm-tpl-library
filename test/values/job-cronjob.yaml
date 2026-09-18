@@ -1,0 +1,87 @@
+# tpl.job builds an isolated value tree (service/autoscaling/pdb blanked,
+# restartPolicy OnFailure, serviceAccount mergeOverwrite); tpl.cronjob wraps the same
+# pod spec with a schedule.
+testFixtures:
+  job: true
+  cronjob: true
+
+replicas: 4
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 9
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 75
+pdb:
+  enabled: true
+  minAvailable: "50%"
+service:
+  default:
+    annotations: {}
+    spec:
+      type: ClusterIP
+      ports:
+        - name: http
+          port: 80
+          targetPort: 8080
+          protocol: TCP
+
+serviceAccount:
+  create: false
+  annotations: {}
+
+jobs:
+  migrate:
+    enabled: true
+    annotations:
+      "helm.sh/hook": pre-install,pre-upgrade
+    backoffLimit: 3
+    completions: 1
+    parallelism: 1
+    activeDeadlineSeconds: 600
+    ttlSecondsAfterFinished: 120
+    suspend: false
+    # mergeOverwrite against the root serviceAccount
+    serviceAccount:
+      create: true
+      annotations:
+        job-only: "yes"
+    containers:
+      migrate:
+        image:
+          repository: "acme/migrator"
+          tag: "0.9.0"
+        command: ["/bin/sh"]
+        args: ["-c", "migrate up"]
+        configmapEnvs: |
+          TARGET: "{{ .Values.component }}"
+        secretEnvs:
+          MIGRATION_TOKEN: "mt-123"
+    initContainers:
+      wait-for-db:
+        image:
+          repository: "acme/wait"
+          tag: "1.0.0"
+  disabled-job:
+    enabled: false
+    containers:
+      noop:
+        image:
+          repository: "acme/noop"
+
+cronjobs:
+  nightly:
+    schedule: "0 2 * * *"
+    concurrencyPolicy: Forbid
+    startingDeadlineSeconds: 300
+    successfulJobsHistoryLimit: 3
+    failedJobsHistoryLimit: 1
+    suspend: false
+    timeZone: "Asia/Riyadh"
+    ttlSecondsAfterFinished: 3600
+    backoffLimit: 2

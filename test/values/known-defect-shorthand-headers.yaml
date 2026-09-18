@@ -1,0 +1,20 @@
+# KNOWN DEFECT — route path `requestHeaders` / `responseHeaders` used without a
+# sibling `headersFilter` key. _routes.tpl does
+#   $reqH := .requestHeaders | default .headersFilter.request
+# and Go templates evaluate both arguments of `default`, so the missing
+# `headersFilter` dereferences nil and the render fails.
+# Asserted as a currently-failing render in tests/known_defects_test.yaml.
+routes:
+  default:
+    enabled: true
+    ingress: false
+    httpRoute: true
+    host: "shop.example.com"
+    paths:
+      - name: "shorthand-headers"
+        path: /hdr
+        pathType: Prefix
+        requestHeaders:
+          add:
+            - name: "X-Request-Source"
+              value: "gateway-api"

@@ -1,0 +1,68 @@
+suite: pod disruption budget (_pdb.tpl)
+templates:
+  - templates/stack.yaml
+release:
+  name: rel
+  namespace: default
+tests:
+  - it: renders no PDB by default
+    asserts:
+      - hasDocuments:
+          count: 4
+
+  - it: prefers minAvailable over maxUnavailable
+    values:
+      - ../values/pdb-np.yaml
+    asserts:
+      - isKind:
+          of: PodDisruptionBudget
+        documentSelector:
+          path: kind
+          value: PodDisruptionBudget
+      - isAPIVersion:
+          of: policy/v1
+        documentSelector:
+          path: kind
+          value: PodDisruptionBudget
+      - equal:
+          path: metadata.name
+          value: rel-shop-api
+        documentSelector:
+          path: kind
+          value: PodDisruptionBudget
+      - equal:
+          path: spec.minAvailable
+          value: 50%
+        documentSelector:
+          path: kind
+          value: PodDisruptionBudget
+      - notExists:
+          path: spec.maxUnavailable
+        documentSelector:
+          path: kind
+          value: PodDisruptionBudget
+      - equal:
+          path: spec.selector.matchLabels
+          value:
+            app.kubernetes.io/name: rel-shop-api
+            app.kubernetes.io/instance: rel
+            app.kubernetes.io/service: rel-shop-api
+        documentSelector:
+          path: kind
+          value: PodDisruptionBudget
+
+  - it: falls back to maxUnavailable when minAvailable is empty
+    values:
+      - ../values/pdb-maxunavailable.yaml
+    asserts:
+      - equal:
+          path: spec.maxUnavailable
+          value: 2
+        documentSelector:
+          path: kind
+          value: PodDisruptionBudget
+      - notExists:
+          path: spec.minAvailable
+        documentSelector:
+          path: kind
+          value: PodDisruptionBudget

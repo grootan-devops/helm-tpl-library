@@ -1,0 +1,97 @@
+suite: end-to-end whole-stack render
+# Two snapshot cases guard the complete output: the shipped defaults, and the library's
+# own example.yaml. Refresh them deliberately with `make test-update` (helm unittest -u)
+# and review the diff -- an unexpected change here is the point of the suite.
+templates:
+  - templates/stack.yaml
+  - templates/job.yaml
+  - templates/cronjob.yaml
+  - templates/monitors.yaml
+  - templates/rbac.yaml
+release:
+  name: rel
+  namespace: default
+tests:
+  - it: matches the snapshot for the shipped defaults
+    asserts:
+      - matchSnapshot: {}
+
+  - it: matches the snapshot for the documented example.yaml
+    values:
+      - ../values/full.yaml
+    asserts:
+      - matchSnapshot: {}
+
+  - it: renders every documented object type for example.yaml
+    values:
+      - ../values/full.yaml
+    templates:
+      - templates/stack.yaml
+    asserts:
+      - isKind:
+          of: Deployment
+        documentSelector:
+          path: kind
+          value: Deployment
+      - isKind:
+          of: HorizontalPodAutoscaler
+        documentSelector:
+          path: kind
+          value: HorizontalPodAutoscaler
+      - isKind:
+          of: PodDisruptionBudget
+        documentSelector:
+          path: kind
+          value: PodDisruptionBudget
+      - isKind:
+          of: NetworkPolicy
+        documentSelector:
+          path: kind
+          value: NetworkPolicy
+      - isKind:
+          of: ServiceAccount
+        documentSelector:
+          path: kind
+          value: ServiceAccount
+      - isKind:
+          of: Ingress
+        documentSelector:
+          path: kind
+          value: Ingress
+      - isKind:
+          of: HTTPRoute
+        documentSelector:
+          path: kind
+          value: HTTPRoute
+      # release "rel" with global.releaseNameLength 20 is shorter than the limit.
+      - equal:
+          path: metadata.name
+          value: rel-admin-backend
+        documentSelector:
+          path: kind
+          value: Deployment
+      - equal:
+          path: metadata.labels["app.kubernetes.io/part-of"]
+          value: e2e-demo-stack
+        documentSelector:
+          path: kind
+          value: Deployment
+      - equal:
+          path: metadata.labels.key1
+          value: value1
+        documentSelector:
+          path: kind
+          value: Deployment
+      # The main container's explicit name override.
+      - equal:
+          path: spec.template.spec.containers[0].name
+          value: app-server
+        documentSelector:
+          path: kind
+          value: Deployment
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "docker.io/nginx:alpine"
+        documentSelector:
+          path: kind
+          value: Deployment

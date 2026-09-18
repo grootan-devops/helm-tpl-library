@@ -1,0 +1,17 @@
+{{- if .Values.testFixtures.rbac }}
+{{- include "tpl.rbac.role" $ }}
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch"]
+---
+{{- include "tpl.rbac.rolebinding" $ }}
+---
+{{- include "tpl.rbac.clusterrole" $ }}
+rules:
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get", "list"]
+---
+{{- include "tpl.rbac.clusterrolebinding" $ }}
+{{- end }}

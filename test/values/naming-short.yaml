@@ -1,0 +1,5 @@
+# releaseNameLength of 1: the release prefix is a single character.
+testFixtures:
+  naming: true
+global:
+  releaseNameLength: 1

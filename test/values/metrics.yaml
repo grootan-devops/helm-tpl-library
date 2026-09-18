@@ -1,0 +1,28 @@
+# ServiceMonitor + PodMonitor rendering.
+testFixtures:
+  monitors: true
+
+global:
+  metrics:
+    enabled: true
+    additionalLabels:
+      release: kube-prometheus-stack
+
+service:
+  default:
+    annotations: {}
+    spec:
+      type: ClusterIP
+      ports:
+        - name: http-metrics
+          port: 9090
+          targetPort: 9090
+          protocol: TCP
+
+metrics:
+  jobLabel: "app-service"
+  endpoints:
+    - port: "http-metrics"
+      path: /metrics
+      interval: 15s
+      scrapeTimeout: 10s

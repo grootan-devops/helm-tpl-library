@@ -1,0 +1,72 @@
+suite: labels and selectors (_labels.tpl)
+templates:
+  - templates/stack.yaml
+release:
+  name: rel
+  namespace: default
+tests:
+  - it: emits the standard label set on the Deployment by default
+    asserts:
+      - equal:
+          path: metadata.labels
+          value:
+            helm.sh/chart: mock-app-0.1.0
+            app.kubernetes.io/name: rel-shop-api
+            app.kubernetes.io/instance: rel
+            app.kubernetes.io/service: rel-shop-api
+            app.kubernetes.io/managed-by: Helm
+            app.kubernetes.io/version: "1.4.2"
+            app.kubernetes.io/component: shop-api
+        documentSelector:
+          path: kind
+          value: Deployment
+      # part-of is omitted while global.partOf is empty.
+      - notExists:
+          path: metadata.labels["app.kubernetes.io/part-of"]
+        documentSelector:
+          path: kind
+          value: Deployment
+
+  - it: adds part-of and global.additionalLabels when set
+    values:
+      - ../values/naming-edges.yaml
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/part-of"]
+          value: commerce-platform
+        documentSelector:
+          path: kind
+          value: Deployment
+      - equal:
+          path: metadata.labels.owner
+          value: platform-team
+        documentSelector:
+          path: kind
+          value: Deployment
+      - equal:
+          path: metadata.labels.tier
+          value: backend
+        documentSelector:
+          path: kind
+          value: Deployment
+
+  - it: uses only the three selector labels for matchLabels
+    asserts:
+      - equal:
+          path: spec.selector.matchLabels
+          value:
+            app.kubernetes.io/name: rel-shop-api
+            app.kubernetes.io/instance: rel
+            app.kubernetes.io/service: rel-shop-api
+        documentSelector:
+          path: kind
+          value: Deployment
+      - equal:
+          path: spec.selector
+          value:
+            app.kubernetes.io/name: rel-shop-api
+            app.kubernetes.io/instance: rel
+            app.kubernetes.io/service: rel-shop-api
+        documentSelector:
+          path: kind
+          value: Service

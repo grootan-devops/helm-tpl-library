@@ -1,0 +1,16 @@
+# Scenario: the pod volume must resolve to the claim tpl.pvc creates, without the
+# consumer writing the name twice.
+component: shop
+subComponent: api
+
+persistence:
+  data:
+    enabled: true
+    size: 10Gi
+
+mounts:
+  pvc:
+    data:
+      enabled: true
+      mountTo: "main"
+      path: /var/lib/data

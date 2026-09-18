@@ -1,0 +1,111 @@
+suite: pvc (_pvc.tpl)
+templates:
+  - templates/pvc.yaml
+release:
+  name: rel
+  namespace: default
+tests:
+  - it: renders nothing by default -- tpl.pvc is opt-in, like tpl.job
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: renders one claim per enabled entry, skipping disabled and existingClaim ones
+    values:
+      - ../values/pvc.yaml
+    asserts:
+      # 'data' and 'cache' only: 'archive' is disabled, 'legacy' reuses a claim.
+      - hasDocuments:
+          count: 2
+      - isKind:
+          of: PersistentVolumeClaim
+      - isAPIVersion:
+          of: v1
+
+  - it: names each claim <resource name>-<key>
+    values:
+      - ../values/pvc.yaml
+    asserts:
+      - equal:
+          path: metadata.name
+          value: rel-shop-api-data
+        documentSelector:
+          path: metadata.name
+          value: rel-shop-api-data
+      - equal:
+          path: metadata.name
+          value: rel-shop-api-cache
+        documentSelector:
+          path: metadata.name
+          value: rel-shop-api-cache
+
+  - it: carries the standard library labels
+    values:
+      - ../values/pvc.yaml
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: rel-shop-api
+        documentSelector:
+          path: metadata.name
+          value: rel-shop-api-data
+      - equal:
+          path: metadata.labels["app.kubernetes.io/managed-by"]
+          value: Helm
+        documentSelector:
+          path: metadata.name
+          value: rel-shop-api-data
+
+  - it: maps every optional field onto the claim spec
+    values:
+      - ../values/pvc.yaml
+    documentSelector:
+      path: metadata.name
+      value: rel-shop-api-data
+    asserts:
+      - equal:
+          path: spec.resources.requests.storage
+          value: 10Gi
+      - equal:
+          path: spec.storageClassName
+          value: gp3
+      - equal:
+          path: spec.volumeMode
+          value: Filesystem
+      - contains:
+          path: spec.accessModes
+          content: ReadWriteOnce
+      - equal:
+          path: metadata.annotations["helm.sh/resource-policy"]
+          value: keep
+      - equal:
+          path: spec.selector.matchLabels.disk
+          value: ssd
+
+  - it: defaults accessModes and volumeMode, and omits storageClassName when unset
+    values:
+      - ../values/pvc.yaml
+    documentSelector:
+      path: metadata.name
+      value: rel-shop-api-cache
+    asserts:
+      - contains:
+          path: spec.accessModes
+          content: ReadWriteOnce
+      - equal:
+          path: spec.volumeMode
+          value: Filesystem
+      # An empty storageClassName means "bind a pre-created PV", which is not the same
+      # as "use the cluster default" -- the key must be absent, not empty.
+      - notExists:
+          path: spec.storageClassName
+
+  - it: fails closed when an enabled claim has no size
+    set:
+      testFixtures.pvc: true
+      persistence:
+        data:
+          enabled: true
+    asserts:
+      - failedTemplate:
+          errorMessage: "persistence.data.size is required when enabled"

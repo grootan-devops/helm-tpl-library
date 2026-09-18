@@ -1,0 +1,102 @@
+# Every mount kind and every mountTo dispatch form.
+region: "us-east-1"
+
+initContainers:
+  01-db-migration:
+    image:
+      repository: "acme/migrator"
+
+containers:
+  main:
+    image:
+      repository: "acme/shop-api"
+  sidecar-logger:
+    name: "log-shipper"
+    image:
+      repository: "fluent/fluent-bit"
+
+mounts:
+  configmap:
+    # mountTo as a list of container keys
+    app-config:
+      enabled: true
+      mountTo: ["main"]
+      path: "/etc/config/app"
+      data:
+        config.json: |
+          { "environment": "production", "retries": 5 }
+    # mountTo "both": every container, main and init
+    global-settings:
+      enabled: true
+      mountTo: "both"
+      path: "/etc/global"
+      data:
+        region: "{{ .Values.region }}"
+    # data as a raw string block
+    raw-block:
+      enabled: true
+      mountTo: "main"
+      path: "/etc/raw"
+      data: |
+        key-a: value-a
+        key-b: value-b
+    # enabled as the string "false" must suppress it
+    disabled-string:
+      enabled: "false"
+      mountTo: "both"
+      path: "/etc/nope"
+      data:
+        a: b
+    # matched by the container NAME override, not the map key
+    by-container-name:
+      enabled: true
+      mountTo: ["log-shipper"]
+      path: "/etc/logship"
+      data:
+        parser.conf: "Name json"
+
+  secret:
+    # mountTo the init container key
+    db-creds:
+      enabled: true
+      mountTo: ["01-db-migration"]
+      path: "/tmp/db-creds"
+      stringData:
+        password: "super-secret-db-password"
+    # mountTo the container TYPE
+    tls-certs:
+      enabled: true
+      mountTo: "main"
+      path: "/etc/certs"
+      params:
+        defaultMode: 420
+        readOnly: true
+      data:
+        ca.crt: "dGVzdA=="
+
+  emptyDir:
+    shared-logs:
+      enabled: true
+      mountTo: ["main", "log-shipper"]
+      path: "/var/log/app"
+      params:
+        sizeLimit: "500Mi"
+        medium: "Memory"
+
+  pvc:
+    data-volume:
+      enabled: true
+      mountTo: ["main"]
+      path: "/data/{{ .Values.component }}"
+      claimName: "my-persistent-claim"
+    # no claimName: falls back to <resource.name>-<key>
+    scratch-volume:
+      enabled: true
+      mountTo: ["main"]
+      path: "/scratch"
+      claimName: ""
+    disabled-volume:
+      enabled: false
+      mountTo: ["main"]
+      path: "/nope"
+      claimName: "nope"

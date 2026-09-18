@@ -1,0 +1,79 @@
+suite: autoscaling (_hpa.tpl)
+templates:
+  - templates/stack.yaml
+release:
+  name: rel
+  namespace: default
+tests:
+  - it: renders no HPA by default
+    asserts:
+      - hasDocuments:
+          count: 4
+
+  - it: targets the Deployment and carries metrics plus both behaviors
+    values:
+      - ../values/autoscaling.yaml
+    asserts:
+      - isKind:
+          of: HorizontalPodAutoscaler
+        documentSelector:
+          path: kind
+          value: HorizontalPodAutoscaler
+      - isAPIVersion:
+          of: autoscaling/v2
+        documentSelector:
+          path: kind
+          value: HorizontalPodAutoscaler
+      - equal:
+          path: spec.scaleTargetRef
+          value:
+            apiVersion: apps/v1
+            kind: Deployment
+            name: rel-shop-api
+        documentSelector:
+          path: kind
+          value: HorizontalPodAutoscaler
+      - equal:
+          path: spec.minReplicas
+          value: 2
+        documentSelector:
+          path: kind
+          value: HorizontalPodAutoscaler
+      - equal:
+          path: spec.maxReplicas
+          value: 10
+        documentSelector:
+          path: kind
+          value: HorizontalPodAutoscaler
+      - lengthEqual:
+          path: spec.metrics
+          count: 2
+        documentSelector:
+          path: kind
+          value: HorizontalPodAutoscaler
+      - equal:
+          path: spec.metrics[0].resource.target.averageUtilization
+          value: 75
+        documentSelector:
+          path: kind
+          value: HorizontalPodAutoscaler
+      - equal:
+          path: spec.behavior.scaleUp.selectPolicy
+          value: Max
+        documentSelector:
+          path: kind
+          value: HorizontalPodAutoscaler
+      - equal:
+          path: spec.behavior.scaleDown.stabilizationWindowSeconds
+          value: 300
+        documentSelector:
+          path: kind
+          value: HorizontalPodAutoscaler
+
+  - it: renders no HPA when enabled but metrics are empty
+    values:
+      - ../values/autoscaling-no-metrics.yaml
+    asserts:
+      # Service, Deployment, Ingress, HTTPRoute -- no HPA.
+      - hasDocuments:
+          count: 4

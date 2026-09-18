@@ -1,0 +1,7 @@
+# releaseNameLength raised well past the release name, plus long component names.
+testFixtures:
+  naming: true
+component: "extremely-long-component-name-for-truncation-checks"
+subComponent: "with-an-equally-long-sub-component-segment"
+global:
+  releaseNameLength: 63

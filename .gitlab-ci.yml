@@ -1,0 +1,35 @@
+include:
+  - project: "devops/library/cicd"
+    ref: 1.2.3
+    file:
+      - '/common/.gitlab-ci.yml'
+      - '/readme/.migration-guide.gitlab.yml'
+      - '/chart/.gitlab-ci.yml'
+      - '/release/.gitlab-ci.yml'
+      - '/release/.notification.gitlab-ci.yml'
+
+variables:
+  CHART_DIR: '.'
+  CHART_REPOSITORY: "helm"
+
+Chart:Scan:
+  rules:
+    - when: never
+
+Chart:UnitTest:
+  stage: test
+  extends:
+    - .chart-lint-workflow-rules
+  variables:
+    MOCK_CHART: test
+  before_script:
+    - helm dependency update "${CHART_DIR}/${MOCK_CHART}"
+  script:
+    - helm unittest --strict --output-type JUnit --output-file unittest-report.xml "${CHART_DIR}/${MOCK_CHART}"
+  artifacts:
+    when: always
+    reports:
+      junit: unittest-report.xml
+    paths:
+      - unittest-report.xml
+    expire_in: 1 week

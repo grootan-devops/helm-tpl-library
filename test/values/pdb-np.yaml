@@ -1,0 +1,22 @@
+# minAvailable must win over maxUnavailable; policyTypes derived from present rules.
+pdb:
+  enabled: true
+  minAvailable: "50%"
+  maxUnavailable: 2
+
+networkPolicy:
+  enabled: true
+  ingressRule:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: "ingress-nginx"
+      ports:
+        - protocol: TCP
+          port: 80
+  egressRule:
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 169.254.169.254/32

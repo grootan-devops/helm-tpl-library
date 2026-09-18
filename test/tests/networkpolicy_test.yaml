@@ -1,0 +1,57 @@
+suite: network policy (_np.tpl)
+templates:
+  - templates/stack.yaml
+release:
+  name: rel
+  namespace: default
+tests:
+  - it: renders no NetworkPolicy by default
+    asserts:
+      - hasDocuments:
+          count: 4
+
+  - it: derives policyTypes from the rules that are present
+    values:
+      - ../values/pdb-np.yaml
+    asserts:
+      - isKind:
+          of: NetworkPolicy
+        documentSelector:
+          path: kind
+          value: NetworkPolicy
+      - equal:
+          path: spec.policyTypes
+          value: [Ingress, Egress]
+        documentSelector:
+          path: kind
+          value: NetworkPolicy
+      - equal:
+          path: spec.ingress[0].from[0].namespaceSelector.matchLabels.name
+          value: ingress-nginx
+        documentSelector:
+          path: kind
+          value: NetworkPolicy
+      - equal:
+          path: spec.egress[0].to[0].ipBlock.cidr
+          value: 0.0.0.0/0
+        documentSelector:
+          path: kind
+          value: NetworkPolicy
+
+  - it: lists only Ingress when there are no egress rules
+    values:
+      - ../values/np-ingress-only.yaml
+    asserts:
+      - equal:
+          path: spec.policyTypes
+          value: [Ingress]
+        documentSelector:
+          path: kind
+          value: NetworkPolicy
+      # The egress key is still emitted, as an empty list.
+      - equal:
+          path: spec.egress
+          value: []
+        documentSelector:
+          path: kind
+          value: NetworkPolicy

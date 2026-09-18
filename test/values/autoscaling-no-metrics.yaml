@@ -1,0 +1,7 @@
+# enabled but metrics empty: no HPA, and the Deployment still drops `replicas`.
+replicas: 5
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  metrics: []

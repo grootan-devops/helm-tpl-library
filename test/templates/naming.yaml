@@ -1,0 +1,33 @@
+{{/* Pure string helpers have no rendered resource of their own, so expose them as
+     ConfigMap data to make them assertable. */}}
+{{- if .Values.testFixtures.naming }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: naming-probe
+data:
+  name: {{ include "tpl.name" $ | quote }}
+  fullname: {{ include "tpl.fullname" $ | quote }}
+  chart: {{ include "tpl.chart" $ | quote }}
+  componentName: {{ include "tpl.component.name" $ | quote }}
+  resourceName: {{ include "tpl.resource.name" $ | quote }}
+  resourceNameWithName: {{ include "tpl.resource.name" (merge (dict "name" "worker") $) | quote }}
+  tokenName: {{ include "tpl.resource.token.name" $ | quote }}
+  tokenNameWithName: {{ include "tpl.resource.token.name" (merge (dict "name" "worker") $) | quote }}
+  siblingAccess: {{ include "tpl.resource.siblingName" (merge (dict "name" "access") $) | quote }}
+  siblingKbBackend: {{ include "tpl.resource.siblingName" (merge (dict "name" "kb-backend") $) | quote }}
+  boolTrue: {{ include "tpl.strToBool" "true" | quote }}
+  boolYes: {{ include "tpl.strToBool" "yes" | quote }}
+  boolOn: {{ include "tpl.strToBool" "on" | quote }}
+  boolFalse: {{ include "tpl.strToBool" "false" | quote }}
+  boolZero: {{ include "tpl.strToBool" "0" | quote }}
+  boolEmpty: {{ include "tpl.strToBool" "" | quote }}
+  boolTemplated: {{ include "tpl.strToBool" (tpl "{{ .Values.testFixtures.naming }}" $) | quote }}
+  portInt: {{ include "tpl.routes.portResolver" (dict "port" 8080 "Values" $.Values) | quote }}
+  portNumericString: {{ include "tpl.routes.portResolver" (dict "port" "9090" "Values" $.Values) | quote }}
+  portNamed: {{ include "tpl.routes.portResolver" (dict "port" "http" "Values" $.Values) | quote }}
+  portUnknownName: {{ include "tpl.routes.portResolver" (dict "port" "nope" "Values" $.Values) | quote }}
+  portMissing: {{ include "tpl.routes.portResolver" (dict "Values" $.Values) | quote }}
+  selectorLabels: {{ include "tpl.selectorLabels" $ | toYaml | quote }}
+  labels: {{ include "tpl.labels" $ | toYaml | quote }}
+{{- end }}

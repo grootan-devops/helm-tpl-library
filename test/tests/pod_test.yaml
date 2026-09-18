@@ -1,0 +1,138 @@
+suite: pod spec (_pod.tpl)
+templates:
+  - templates/stack.yaml
+release:
+  name: rel
+  namespace: default
+tests:
+  - it: opts out of the service-account token when no ServiceAccount is created
+    asserts:
+      - equal:
+          path: spec.template.spec.automountServiceAccountToken
+          value: false
+        documentSelector:
+          path: kind
+          value: Deployment
+      - notExists:
+          path: spec.template.spec.serviceAccountName
+        documentSelector:
+          path: kind
+          value: Deployment
+
+  - it: binds the pod to the generated ServiceAccount when one is created
+    values:
+      - ../values/serviceaccount.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: rel-shop-api
+        documentSelector:
+          path: kind
+          value: Deployment
+      - notExists:
+          path: spec.template.spec.automountServiceAccountToken
+        documentSelector:
+          path: kind
+          value: Deployment
+
+  - it: applies the hardened pod securityContext and the global pull secrets
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext
+          value:
+            runAsUser: 10001
+            runAsGroup: 10001
+            runAsNonRoot: true
+            fsGroup: 10001
+            fsGroupChangePolicy: OnRootMismatch
+            seccompProfile:
+              type: RuntimeDefault
+        documentSelector:
+          path: kind
+          value: Deployment
+      - equal:
+          path: spec.template.spec.imagePullSecrets
+          value:
+            - name: cr-cred
+        documentSelector:
+          path: kind
+          value: Deployment
+      - equal:
+          path: spec.template.spec.restartPolicy
+          value: Always
+        documentSelector:
+          path: kind
+          value: Deployment
+
+  - it: passes scheduling and hostAliases through untouched
+    values:
+      - ../values/containers-multi.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.nodeSelector
+          value:
+            disktype: ssd
+        documentSelector:
+          path: kind
+          value: Deployment
+      - equal:
+          path: spec.template.spec.tolerations[0].key
+          value: gpu
+        documentSelector:
+          path: kind
+          value: Deployment
+      - equal:
+          path: spec.template.spec.topologySpreadConstraints[0].topologyKey
+          value: topology.kubernetes.io/zone
+        documentSelector:
+          path: kind
+          value: Deployment
+      - exists:
+          path: spec.template.spec.affinity.podAntiAffinity
+        documentSelector:
+          path: kind
+          value: Deployment
+      - equal:
+          path: spec.template.spec.hostAliases[0].ip
+          value: "127.0.0.1"
+        documentSelector:
+          path: kind
+          value: Deployment
+
+  - it: orders init containers and containers alphabetically by map key
+    values:
+      - ../values/mounts.yaml
+    asserts:
+      - lengthEqual:
+          path: spec.template.spec.initContainers
+          count: 1
+        documentSelector:
+          path: kind
+          value: Deployment
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: init-shop-api-01-db-migration
+        documentSelector:
+          path: kind
+          value: Deployment
+      - equal:
+          path: spec.template.spec.containers[0].name
+          value: shop-api-main
+        documentSelector:
+          path: kind
+          value: Deployment
+      # Key "sidecar-logger" sorts after "main"; the rendered name is its override.
+      - equal:
+          path: spec.template.spec.containers[1].name
+          value: log-shipper
+        documentSelector:
+          path: kind
+          value: Deployment
+
+  - it: emits no volumes block when nothing is mounted
+    asserts:
+      - notExists:
+          path: spec.template.spec.volumes
+        documentSelector:
+          path: kind
+          value: Deployment

@@ -1,0 +1,54 @@
+# parentRefs resolution, with non-default route keys so each HTTPRoute name is unique.
+global:
+  routes:
+    domain: "example.com"
+    gateway:
+      name: "default-gateway"
+      namespace: "gateway-system"
+      class: "gateway"
+
+service:
+  default:
+    annotations: {}
+    spec:
+      type: ClusterIP
+      ports:
+        - name: http
+          port: 80
+          targetPort: 8080
+          protocol: TCP
+        - name: grpc
+          port: 50051
+          targetPort: 50051
+          protocol: TCP
+
+routes:
+  # The baseline values.yaml ships an enabled `default` route; switch it off so only
+  # the routes defined below render.
+  default:
+    enabled: false
+  # per-route gateway overrides the global one
+  internal:
+    enabled: true
+    ingress: false
+    httpRoute: true
+    host: "internal.example.com"
+    gateway:
+      name: "internal-gateway"
+      namespace: "mesh-system"
+    sectionName: "https"
+    gatewayPort: 443
+    paths:
+      - path: /grpc
+        pathType: PathPrefix
+        port: grpc
+  # explicit parentRefs bypass gateway resolution entirely
+  custom-parents:
+    enabled: true
+    ingress: false
+    httpRoute: true
+    host: "custom.example.com"
+    parentRefs:
+      - name: "byo-gateway"
+        namespace: "byo-system"
+        sectionName: "web"

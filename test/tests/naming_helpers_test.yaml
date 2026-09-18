@@ -1,0 +1,132 @@
+suite: naming and string helpers (_name.tpl, _helper.tpl, _routes.tpl portResolver)
+templates:
+  - templates/naming.yaml
+release:
+  name: shop-production-release
+  namespace: default
+tests:
+  - it: derives every name from the truncated release name and the component
+    values:
+      - ../values/naming-edges.yaml
+    asserts:
+      # global.releaseNameLength is 6, so "shop-production-release" -> "shop-p".
+      - equal:
+          path: data.resourceName
+          value: "shop-p-shop-api"
+      - equal:
+          path: data.componentName
+          value: "shop-api"
+      - equal:
+          path: data.resourceNameWithName
+          value: "shop-p-shop-api-worker"
+      - equal:
+          path: data.tokenName
+          value: "shop-p-shop-api-token"
+      - equal:
+          path: data.tokenNameWithName
+          value: "shop-p-shop-api-worker-token"
+      # siblingName carries no component segment: it addresses another service.
+      - equal:
+          path: data.siblingAccess
+          value: "shop-p-access"
+      - equal:
+          path: data.siblingKbBackend
+          value: "shop-p-kb-backend"
+      # nameOverride feeds tpl.name/tpl.fullname only, not tpl.resource.name.
+      - equal:
+          path: data.name
+          value: "shopoverride"
+      - equal:
+          path: data.fullname
+          value: "shop-production-release-shopoverride"
+      # helm.sh/chart comes from the CONSUMER chart, not from tpllib.
+      - equal:
+          path: data.chart
+          value: "mock-app-0.1.0"
+
+  - it: collapses to the component alone when subComponent is empty
+    values:
+      - ../values/naming-nosub.yaml
+    asserts:
+      - equal:
+          path: data.componentName
+          value: "shop"
+      - equal:
+          path: data.resourceName
+          value: "shop-p-shop"
+      - equal:
+          path: data.tokenName
+          value: "shop-p-shop-token"
+
+  - it: honours a releaseNameLength of 1
+    values:
+      - ../values/naming-short.yaml
+    asserts:
+      - equal:
+          path: data.resourceName
+          value: "s-shop-api"
+      - equal:
+          path: data.siblingAccess
+          value: "s-access"
+
+  - it: does NOT truncate resource names to the 63-char DNS limit
+    # KNOWN DEFECT: tpl.resource.name has no `trunc 63`, unlike tpl.name/tpl.fullname,
+    # so a long component produces a name Kubernetes will reject. This asserts the
+    # current behaviour; if the library starts truncating, update this case.
+    values:
+      - ../values/naming-long.yaml
+    asserts:
+      - equal:
+          path: data.resourceName
+          value: "shop-production-release-extremely-long-component-name-for-truncation-checks-with-an-equally-long-sub-component-segment"
+      - matchRegex:
+          path: data.resourceName
+          pattern: "^.{64,}$"
+
+  - it: maps only true/yes/on to a truthy string in tpl.strToBool
+    values:
+      - ../values/naming-edges.yaml
+    asserts:
+      - equal:
+          path: data.boolTrue
+          value: "1"
+      - equal:
+          path: data.boolYes
+          value: "1"
+      - equal:
+          path: data.boolOn
+          value: "1"
+      - equal:
+          path: data.boolFalse
+          value: ""
+      - equal:
+          path: data.boolZero
+          value: ""
+      - equal:
+          path: data.boolEmpty
+          value: ""
+      # A templated "true" resolves before the comparison.
+      - equal:
+          path: data.boolTemplated
+          value: "1"
+
+  - it: resolves ints, numeric strings and named service ports, else falls back to 80
+    values:
+      - ../values/naming-edges.yaml
+    asserts:
+      - equal:
+          path: data.portInt
+          value: "8080"
+      - equal:
+          path: data.portNumericString
+          value: "9090"
+      # "http" is resolved against service.default.spec.ports (port 8081).
+      - equal:
+          path: data.portNamed
+          value: "8081"
+      - equal:
+          path: data.portUnknownName
+          value: "80"
+      - equal:
+          path: data.portMissing
+          value: "80"

@@ -1,0 +1,12 @@
+# Only ingress rules: policyTypes must be [Ingress] alone.
+networkPolicy:
+  enabled: true
+  ingressRule:
+    - from:
+        - podSelector:
+            matchLabels:
+              role: frontend
+      ports:
+        - protocol: TCP
+          port: 8080
+  egressRule: []

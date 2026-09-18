@@ -1,0 +1,46 @@
+# Scenario: chart-owned PersistentVolumeClaims via the optional tpl.pvc entrypoint.
+component: shop
+subComponent: api
+
+testFixtures:
+  pvc: true
+
+persistence:
+  # Fully specified: every optional field exercised.
+  data:
+    enabled: true
+    storageClass: "gp3"
+    size: 10Gi
+    accessModes:
+      - ReadWriteOnce
+    volumeMode: Filesystem
+    annotations:
+      helm.sh/resource-policy: keep
+    selector:
+      matchLabels:
+        disk: ssd
+
+  # Minimal: defaults supply accessModes and volumeMode, no storageClassName emitted.
+  cache:
+    enabled: true
+    size: 1Gi
+
+  # Disabled -- renders nothing.
+  archive:
+    enabled: false
+    size: 100Gi
+
+  # Reuses an operator-managed claim -- renders nothing, so the chart never owns
+  # or deletes it.
+  legacy:
+    enabled: true
+    existingClaim: uploads-pvc
+    size: 5Gi
+
+mounts:
+  pvc:
+    # claimName omitted: defaults to the claim 'data' above.
+    data:
+      enabled: true
+      mountTo: "main"
+      path: /var/lib/data

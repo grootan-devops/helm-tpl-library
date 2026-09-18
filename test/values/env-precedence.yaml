@@ -1,0 +1,44 @@
+# configmapEnvs/secretEnvs as a templated STRING block (main) and as a MAP (worker),
+# each with additional*Envs.
+# PRECEDENCE: the library does `merge (deepCopy $additional) $base`, and sprig `merge`
+# does not overwrite keys already present in the destination -- so additional*Envs WINS
+# over the base block. Keys below are named after that observed behaviour.
+# Empty-string values are dropped entirely.
+features:
+  enabled: true
+database:
+  password: "s3cr3t"
+
+containers:
+  main:
+    image:
+      repository: "acme/shop-api"
+    configmapEnvs: |
+      APP_MODE: "production"
+      FEATURE_FLAG: {{ .Values.features.enabled | quote }}
+      COMPONENT: "{{ .Values.component }}"
+      PRECEDENCE_KEY: "from-base"
+      EMPTY_VALUE: ""
+    additionalConfigmapEnvs:
+      API_HOST: host.com
+      PRECEDENCE_KEY: "from-additional"
+      ALSO_EMPTY: ""
+    secretEnvs: |
+      DB_PASSWORD: {{ .Values.database.password }}
+      SECRET_PRECEDENCE: "from-base"
+    additionalSecretEnvs:
+      API_KEY: api-key-value
+      SECRET_PRECEDENCE: "from-additional"
+  worker:
+    image:
+      repository: "acme/shop-worker"
+    configmapEnvs:
+      QUEUE: "orders"
+      # NOTE: an int here currently breaks the library (see known-defect-numeric-env.yaml).
+      CONCURRENCY: "4"
+    additionalConfigmapEnvs:
+      QUEUE: "additional-wins"
+    secretEnvs:
+      WORKER_TOKEN: "wt-123"
+    additionalSecretEnvs:
+      WORKER_TOKEN: "additional-wins"

@@ -1,0 +1,5 @@
+{{- if .Values.testFixtures.monitors }}
+{{- include "tpl.servicemonitor" $ }}
+---
+{{- include "tpl.podmonitor" $ }}
+{{- end }}

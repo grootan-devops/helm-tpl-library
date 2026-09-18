@@ -1,0 +1,34 @@
+# Host resolution and the enabled switch, with non-default route keys so each rendered
+# Ingress has a name of its own.
+global:
+  routes:
+    domain: "example.com"
+    ingressClass: "nginx"
+    tlsSecretName: "wildcard-tls"
+
+routes:
+  # The baseline values.yaml ships an enabled `default` route; switch it off so only
+  # the routes defined below render.
+  default:
+    enabled: false
+  # hosts: list wins over host
+  multihost:
+    enabled: true
+    ingress: true
+    httpRoute: false
+    host: "ignored.example.com"
+    hosts:
+      - "a.{{ $.Values.global.routes.domain }}"
+      - "b.{{ $.Values.global.routes.domain }}"
+    ingressClass: "apisix"
+  # neither host nor hosts: falls back to component + global.routes.domain
+  fallback:
+    enabled: true
+    ingress: true
+    httpRoute: false
+  # disabled route renders nothing at all
+  legacy:
+    enabled: false
+    ingress: true
+    httpRoute: true
+    host: "legacy.example.com"

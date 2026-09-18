@@ -1,0 +1,10 @@
+# Endpoints present but the global switch is off: nothing renders.
+testFixtures:
+  monitors: true
+global:
+  metrics:
+    enabled: false
+metrics:
+  endpoints:
+    - port: "http-metrics"
+      path: /metrics

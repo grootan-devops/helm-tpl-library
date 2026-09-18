@@ -1,0 +1,229 @@
+suite: container (_container.tpl)
+templates:
+  - templates/stack.yaml
+release:
+  name: rel
+  namespace: default
+tests:
+  - it: builds the image from the global registry and Chart.AppVersion
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "cr.io/acme/shop-api:1.4.2"
+        documentSelector:
+          path: kind
+          value: Deployment
+      - equal:
+          path: spec.template.spec.containers[0].imagePullPolicy
+          value: IfNotPresent
+        documentSelector:
+          path: kind
+          value: Deployment
+
+  - it: lets a container override the registry, repository template and tag
+    values:
+      - ../values/containers-multi.yaml
+    asserts:
+      # repository is tpl-evaluated: "acme/{{ .Values.component }}-api".
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "cr.io/acme/shop-api:1.4.2"
+        documentSelector:
+          path: kind
+          value: Deployment
+      - equal:
+          path: spec.template.spec.containers[1].image
+          value: "docker.io/fluent/fluent-bit:2.2.0"
+        documentSelector:
+          path: kind
+          value: Deployment
+      - equal:
+          path: spec.template.spec.initContainers[0].image
+          value: "cr.io/acme/migrator:0.9.0"
+        documentSelector:
+          path: kind
+          value: Deployment
+
+  - it: tpl-evaluates command and args
+    values:
+      - ../values/containers-multi.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].command
+          value: ["/bin/sh"]
+        documentSelector:
+          path: kind
+          value: Deployment
+      - equal:
+          path: spec.template.spec.initContainers[0].args
+          value: ["-c", "migrate --target shop"]
+        documentSelector:
+          path: kind
+          value: Deployment
+
+  - it: passes a direct env list through verbatim, valueFrom included
+    values:
+      - ../values/containers-multi.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env
+          value:
+            - name: LOG_LEVEL
+              value: "debug"
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+        documentSelector:
+          path: kind
+          value: Deployment
+      # A container with no env list gets no env key at all.
+      - notExists:
+          path: spec.template.spec.containers[1].env
+        documentSelector:
+          path: kind
+          value: Deployment
+
+  - it: passes resources, resizePolicy and securityContext through
+    values:
+      - ../values/containers-multi.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].resources.limits.memory
+          value: 1Gi
+        documentSelector:
+          path: kind
+          value: Deployment
+      - equal:
+          path: spec.template.spec.containers[0].resizePolicy
+          value:
+            - resourceName: cpu
+              restartPolicy: NotRequired
+        documentSelector:
+          path: kind
+          value: Deployment
+      - equal:
+          path: spec.template.spec.containers[0].securityContext
+          value:
+            privileged: false
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop: ["ALL"]
+        documentSelector:
+          path: kind
+          value: Deployment
+
+  - it: renders all three probes only while probes.enabled is true
+    values:
+      - ../values/containers-multi.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.httpGet.path
+          value: /healthz
+        documentSelector:
+          path: kind
+          value: Deployment
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.httpGet.path
+          value: /ready
+        documentSelector:
+          path: kind
+          value: Deployment
+      - equal:
+          path: spec.template.spec.containers[0].startupProbe.tcpSocket.port
+          value: 8080
+        documentSelector:
+          path: kind
+          value: Deployment
+      # The init container defines a liveness probe but sets probes.enabled false.
+      - notExists:
+          path: spec.template.spec.initContainers[0].livenessProbe
+        documentSelector:
+          path: kind
+          value: Deployment
+
+  - it: wires envFrom to the generated env objects and to the extra mounts
+    values:
+      - ../values/containers-multi.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].envFrom
+          value:
+            - configMapRef:
+                name: common-config
+            - secretRef:
+                name: database-credentials
+        documentSelector:
+          path: kind
+          value: Deployment
+
+  - it: references the generated env ConfigMap and Secret by resource name
+    values:
+      - ../values/env-precedence.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].envFrom
+          value:
+            - secretRef:
+                name: rel-shop-api-main-env
+            - configMapRef:
+                name: rel-shop-api-main-env
+        documentSelector:
+          path: kind
+          value: Deployment
+
+  - it: derives container ports from the service map and dedupes by port name
+    values:
+      - ../values/service-multi.yaml
+    asserts:
+      # http appears in both services; it must be listed once, targetPort wins.
+      - equal:
+          path: spec.template.spec.containers[0].ports
+          value:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+            - containerPort: 9090
+              name: metrics
+              protocol: TCP
+            - containerPort: 50051
+              name: grpc
+              protocol: TCP
+        documentSelector:
+          path: kind
+          value: Deployment
+
+  - it: gives every main container the same inherited ports
+    # KNOWN DEFECT: a sidecar with no `service` of its own inherits .Values.service,
+    # so two containers in one pod declare the same port NAME -- which Kubernetes
+    # rejects. Asserted as current behaviour; a fix should scope inheritance to the
+    # container that actually owns the service.
+    values:
+      - ../values/containers-multi.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[1].ports
+          value:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+        documentSelector:
+          path: kind
+          value: Deployment
+      - equal:
+          path: spec.template.spec.containers[0].ports[0].name
+          value: http
+        documentSelector:
+          path: kind
+          value: Deployment
+
+  - it: gives init containers no ports
+    values:
+      - ../values/containers-multi.yaml
+    asserts:
+      - notExists:
+          path: spec.template.spec.initContainers[0].ports
+        documentSelector:
+          path: kind
+          value: Deployment

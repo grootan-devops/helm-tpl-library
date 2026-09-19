@@ -2,7 +2,7 @@
 # Ingress has a name of its own.
 global:
   routes:
-    domain: "example.com"
+    domain: "contoso.com"
     ingressClass: "nginx"
     tlsSecretName: "wildcard-tls"
 
@@ -16,7 +16,7 @@ routes:
     enabled: true
     ingress: true
     httpRoute: false
-    host: "ignored.example.com"
+    host: "ignored.contoso.com"
     hosts:
       - "a.{{ $.Values.global.routes.domain }}"
       - "b.{{ $.Values.global.routes.domain }}"
@@ -31,4 +31,4 @@ routes:
     enabled: false
     ingress: true
     httpRoute: true
-    host: "legacy.example.com"
+    host: "legacy.contoso.com"

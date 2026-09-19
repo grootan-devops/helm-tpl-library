@@ -8,7 +8,7 @@ Mock consumer chart used to render and assert the tpllib library templates.
 
 | Repository | Name | Version |
 |------------|------|---------|
-| file://.. | tpllib | 1.2.0 |
+| file://.. | tpllib | 1.0.0 |
 
 ## Values
 
@@ -20,7 +20,7 @@ Mock consumer chart used to render and assert the tpllib library templates.
 | global.image.registry | string | `"cr.io"` | Global Docker image registry (e.g., docker.io, quay.io). |
 | global.image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. Defaults to IfNotPresent. Ref: https://kubernetes.io/docs/concepts/containers/images/#image-pull-policy |
 | global.image.pullSecrets | list | `["cr-cred"]` | List of image pull secrets for private registries. Ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/ |
-| global.routes.domain | string | `""` | Base routing domain name (e.g., example.com). |
+| global.routes.domain | string | `""` | Base routing domain name (e.g., contoso.com). |
 | global.routes.ingressClass | string | `""` | Ingress class name for Ingress resources (e.g., nginx, apisix). |
 | global.routes.tlsSecretName | string | `""` | Ingress TLS secret name. |
 | global.routes.gateway.name | string | `"default-gateway"` | Target Gateway name for HTTPRoute parentRefs. |

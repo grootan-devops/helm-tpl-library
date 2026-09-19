@@ -36,7 +36,7 @@ tests:
     asserts:
       - equal:
           path: spec.rules[0].host
-          value: "shop.example.com"
+          value: "shop.contoso.com"
         documentSelector:
           path: kind
           value: Ingress
@@ -55,7 +55,7 @@ tests:
           path: spec.tls
           value:
             - secretName: shop-tls
-              hosts: ["shop.example.com"]
+              hosts: ["shop.contoso.com"]
         documentSelector:
           path: kind
           value: Ingress
@@ -71,7 +71,7 @@ tests:
             nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
             cert-manager.io/cluster-issuer: letsencrypt-prod
             nginx.ingress.kubernetes.io/proxy-body-size: 50m
-            x-templated-host: shop.example.com
+            x-templated-host: shop.contoso.com
         documentSelector:
           path: kind
           value: Ingress
@@ -142,13 +142,13 @@ tests:
           value: rel-shop-api-multihost
       - equal:
           path: spec.rules[0].host
-          value: "a.example.com"
+          value: "a.contoso.com"
         documentSelector:
           path: metadata.name
           value: rel-shop-api-multihost
       - equal:
           path: spec.rules[1].host
-          value: "b.example.com"
+          value: "b.contoso.com"
         documentSelector:
           path: metadata.name
           value: rel-shop-api-multihost
@@ -156,7 +156,7 @@ tests:
           path: spec.tls
           value:
             - secretName: wildcard-tls
-              hosts: ["a.example.com", "b.example.com"]
+              hosts: ["a.contoso.com", "b.contoso.com"]
         documentSelector:
           path: metadata.name
           value: rel-shop-api-multihost
@@ -167,7 +167,7 @@ tests:
     asserts:
       - equal:
           path: spec.rules[0].host
-          value: "shop.example.com"
+          value: "shop.contoso.com"
         documentSelector:
           path: metadata.name
           value: rel-shop-api-fallback

@@ -23,7 +23,7 @@ global:
       - cr-cred
 
   routes:
-    # -- Base routing domain name (e.g., example.com).
+    # -- Base routing domain name (e.g., contoso.com).
     # @section -- Global Settings
     domain: ""
     # -- Ingress class name for Ingress resources (e.g., nginx, apisix).

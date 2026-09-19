@@ -1,5 +1,7 @@
 # Helm tpl Library
 
+[Compatibility](https://github.com/grootan-devops/ai-skills/blob/main/COMPATIBILITY.md) · [Security](./SECURITY.md) · [Reporting policy](./CONTRIBUTING.md)
+
 {{ template "chart.badgesSection" . }}
 
 {{ template "chart.deprecationWarning" . }}
@@ -17,7 +19,7 @@ helm registry login oci-registry-endpoint --username registry-username --passwor
 ```yaml
 dependencies:
   - name: tpllib
-    version: 1.2.0
+    version: 1.0.0
     repository: oci://registry-endpoint/registry-name
 ```
 
@@ -37,11 +39,11 @@ type: application
 home: `app-home-page-link`
 maintainers:
   - name: DevOps
-    email: devops@example.com
+    email: devops@contoso.com
 dependencies:
   - name: tpllib
-    version: 1.2.0
-    repository: oci://registry.example.com/helm
+    version: 1.0.0
+    repository: oci://registry.contoso.com/helm
 icon: `app-logo`
 appVersion: `app-version`
 deprecated: false
@@ -326,6 +328,14 @@ Whenever `values.yaml` or `example.yaml` changes, refresh `test/values.yaml`
 {{ template "chart.sourcesSection" . }}
 
 {{ template "chart.valuesSection" . }}
+
+## License
+
+Copyright 2026 Grootan Technologies Pvt Ltd.
+
+Licensed under the [GNU Affero General Public License v3.0](./LICENSE.md)
+(`AGPL-3.0-only`). External contributions are not accepted; see
+[CONTRIBUTING.md](./CONTRIBUTING.md) for bug and security reporting.
 
 {{ template "helm-docs.versionFooter" . }}
 

@@ -1,7 +1,7 @@
 # HTTPRoute only. Gateway resolution chain, hostnames, default backend, port resolver.
 global:
   routes:
-    domain: "example.com"
+    domain: "contoso.com"
     gateway:
       name: "default-gateway"
       namespace: "gateway-system"

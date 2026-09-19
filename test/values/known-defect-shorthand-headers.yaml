@@ -9,7 +9,7 @@ routes:
     enabled: true
     ingress: false
     httpRoute: true
-    host: "shop.example.com"
+    host: "shop.contoso.com"
     paths:
       - name: "shorthand-headers"
         path: /hdr

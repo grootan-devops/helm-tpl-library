@@ -2,7 +2,7 @@
 # persistence, APISIX plugins annotation and pluginConfigName extensionRef.
 global:
   routes:
-    domain: "example.com"
+    domain: "contoso.com"
 
 service:
   default:
@@ -20,7 +20,7 @@ routes:
     enabled: true
     ingress: false
     httpRoute: true
-    host: "shop.example.com"
+    host: "shop.contoso.com"
     plugins:
       - name: "limit-count"
         config:
@@ -76,7 +76,7 @@ routes:
         path: /shorthand
         pathType: Prefix
         rewrite:
-          hostname: "internal.example.com"
+          hostname: "internal.contoso.com"
           path: "/swagger-ui/index.html"
         # NOTE: requestHeaders/responseHeaders without a headersFilter key currently
         # breaks the library (see known-defect-shorthand-headers.yaml); the

@@ -43,7 +43,7 @@ tests:
           value: HTTPRoute
       - equal:
           path: spec.hostnames
-          value: ["shop.example.com"]
+          value: ["shop.contoso.com"]
         documentSelector:
           path: kind
           value: HTTPRoute

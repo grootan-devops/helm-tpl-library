@@ -17,7 +17,7 @@ global:
       monitoring: prometheus
 
   routes:
-    domain: "example.com"
+    domain: "contoso.com"
     ingressClass: "nginx"
     tlsSecretName: "example-com-tls"
     gateway:
@@ -51,7 +51,7 @@ restartPolicy: Always
 initContainers:
   01-db-migration:
     image:
-      repository: "my-org/db-migrator"
+      repository: "contoso/db-migrator"
       tag: "v1.2"
     command: ["/bin/sh", "-c", "./migrate-db.sh"]
     secretEnvs:

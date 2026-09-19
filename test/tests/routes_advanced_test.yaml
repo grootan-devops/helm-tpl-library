@@ -129,7 +129,7 @@ tests:
           value:
             - type: URLRewrite
               urlRewrite:
-                hostname: internal.example.com
+                hostname: internal.contoso.com
                 path:
                   type: ReplacePrefixMatch
                   replacePrefixMatch: /swagger-ui/index.html

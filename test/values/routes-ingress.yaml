@@ -1,7 +1,7 @@
 # Ingress only. Host sources, ingressClass resolution, TLS, pathType normalization.
 global:
   routes:
-    domain: "example.com"
+    domain: "contoso.com"
     ingressClass: "nginx"
     tlsSecretName: "wildcard-tls"
 

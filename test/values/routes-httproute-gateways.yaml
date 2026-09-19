@@ -1,7 +1,7 @@
 # parentRefs resolution, with non-default route keys so each HTTPRoute name is unique.
 global:
   routes:
-    domain: "example.com"
+    domain: "contoso.com"
     gateway:
       name: "default-gateway"
       namespace: "gateway-system"
@@ -32,7 +32,7 @@ routes:
     enabled: true
     ingress: false
     httpRoute: true
-    host: "internal.example.com"
+    host: "internal.contoso.com"
     gateway:
       name: "internal-gateway"
       namespace: "mesh-system"
@@ -47,7 +47,7 @@ routes:
     enabled: true
     ingress: false
     httpRoute: true
-    host: "custom.example.com"
+    host: "custom.contoso.com"
     parentRefs:
       - name: "byo-gateway"
         namespace: "byo-system"

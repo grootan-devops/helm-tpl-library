@@ -357,6 +357,33 @@ Whenever `values.yaml` or `example.yaml` changes, refresh `test/values.yaml`
 
 {{ template "chart.valuesSection" . }}
 
+### Testing a consumer chart — what to cover, and what not to
+
+A consumer chart may enable `helm unittest` in CI (`chart.yml` `run-unittest: true` on
+GitHub, the chart test job on GitLab). The question is what those tests should assert.
+
+**Not the Kubernetes rendering.** The suites above already cover it, against this library,
+at this version: resource naming, pod and container spec, Service, Ingress and HTTPRoute,
+mounts and PVC pairing, RBAC, HPA, PDB, NetworkPolicy, labels, metrics, env precedence, and
+the job and cronjob workloads. A consumer chart that re-asserts a rendered `spec:` is
+testing `tpllib`, not itself — it duplicates work, and it breaks on a library upgrade that
+was correct.
+
+**Cover what only this chart knows**: the values it declares, and what the library does with
+them.
+
+| Assert | Why it is the consumer's |
+|---|---|
+| **Rendered names** for this chart's `component` / `subComponent` / `global.partOf` | The helper is tested here; whether *your* values produce `order-backend-main` is yours |
+| **Token rendering** — a templated token inside a value resolves | `tpl` evaluation is the library's, but which values carry a token, and to what, is the chart's |
+| **Auto defaults, and that an override overrides** | A default that silently wins over a set value is the failure this catches; the pairing is chart-specific |
+| **Sibling references** resolve to the services this chart actually talks to | `tpl.resource.siblingName` is tested here; that your `cart.internalUrl` points at the cart service is not |
+| **Schema** — `values.schema.json` rejects the mistakes this chart's values invite | The shape is the chart's own |
+
+A useful shape is one scenario file per decision the chart makes, mirroring `test/values/`
+above: defaults, then one override layer per behaviour, each asserting only the keys that
+layer changes.
+
 ## License
 
 Copyright 2026 Grootan Technologies Pvt Ltd.

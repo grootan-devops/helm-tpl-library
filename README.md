@@ -50,6 +50,27 @@ deprecated: false
   - If sub-component is present (e.g. Node.js frontend, Go gateway, worker): `xyz-frontend`, `auth-gateway`, `payment-worker`.
   - If standalone service or single component: `cms`, `auth`.
 
+- **Container Naming & the reserved `main` key**:
+  Every container name is derived from its **map key**, not from a `name:` field:
+
+  | Declared at | Rendered name |
+  | --- | --- |
+  | `containers.<key>` | `{component}-{subComponent}-{key}` |
+  | `initContainers.<key>` | `init-{component}-{subComponent}-{key}` |
+  | `jobs.<job>.containers.<key>` | `{component}-{subComponent}-{key}` |
+  | `jobs.<job>.initContainers.<key>` | `init-{component}-{subComponent}-{key}` |
+  | `cronjobs.<cj>` | reuses the root `containers:`, so the same names as the workload |
+
+  With `subComponent` empty the prefix collapses to `{component}`. There is no `-job` or
+  `-cronjob` suffix: a job's containers live in their own pod, so there is nothing to
+  disambiguate, and the suffix would only eat into the 63-character DNS-1123 budget. A key
+  too long to fit that budget fails the render rather than producing a truncated name.
+
+  **`main` is reserved** for the single main workload container under `containers:`.
+  `tpllib` fails the render if it is used as an init container key or as a
+  `jobs.<job>.containers` key. It does **not** apply to `cronjobs:`, which reuse the root
+  `containers:` and therefore run `main` in their pod by design.
+
 - **Template Invocation Standards (`templates/manifest.yaml`)**:
   Use the below `tpllib` template functions to generate Kubernetes resources:
 
@@ -264,8 +285,15 @@ mounts:
     - **Secrets**: Application secrets must be declared under `.Values.secrets` (e.g., `appSecret`, `jwtSecret`, `apiTokenSalt`).
 
 - **Modular JSON Schema Architecture (`values.schema.json`)**:
-  - Split and modularize schemas using `$defs` / `definitions` to isolate domains (`#/$defs/databaseSettings`, `#/$defs/storageSettings`, `#/$defs/containerSpec`, `#/$defs/securityContext`).
-  - Ensures clean schema maintainability, reusable definitions, and strict validation during `helm lint`.
+  - `tpllib` ships its own `values.schema.json` describing the shape above, with reusable
+    `$defs` (`containerMap`, `container`, `workloadMap`, `persistenceMap`, `mounts`,
+    `toggleable`, `autoscaling`). Consumer charts model theirs on it.
+  - It carries **no top-level `required`**, deliberately. A consumer configures `tpllib` at
+    the root of its own values, so the subchart's values section is validated empty — any
+    required key there would fail every consumer's render.
+  - Types and enums only: `replicas` must be an integer, `restartPolicy` one of
+    `Always`/`OnFailure`/`Never`, `autoscaling.minReplicas` at least 1. Unknown keys are
+    allowed, so the schema catches typos and wrong types without blocking a valid config.
 
 - **RBAC & Security Policies**:
   - `Role` and `RoleBinding` require dedicated configuration beyond basic template inclusion. Verify permissions carefully.
@@ -457,6 +485,8 @@ Whenever `values.yaml` or `example.yaml` changes, refresh `test/values.yaml`
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
+| jobs | object | `{}` |  |
+| cronjobs | object | `{}` |  |
 | service.default | object | `{"annotations":{},"spec":{"ports":[],"type":"ClusterIP"}}` | Default service definition. |
 | persistence | object | `{}` |  |
 

@@ -351,6 +351,60 @@ pod:
     seccompProfile:
       type: RuntimeDefault
 
+# Jobs rendered by the optional tpl.job entrypoint. tpl.deployment does not call it, so a
+# chart that wants a Job must include tpl.job in templates/manifest.yaml. Each entry is a
+# whole pod: it inherits the root values, then overrides containers and initContainers with
+# its own. The container key "main" is rejected here -- a Job container is named for the
+# task it performs.
+jobs: {}
+### Example
+# jobs:
+#   migrate:
+#     enabled: true
+#     # Hook annotations run the Job before the workload it precedes.
+#     annotations:
+#       "helm.sh/hook": pre-install,pre-upgrade
+#     backoffLimit: 3
+#     completions: 1
+#     parallelism: 1
+#     activeDeadlineSeconds: 600
+#     # Deletes the finished Job; without it completed Jobs accumulate in the namespace.
+#     ttlSecondsAfterFinished: 120
+#     suspend: false
+#     # mergeOverwrite against the root serviceAccount, not a replacement for it.
+#     serviceAccount:
+#       create: true
+#     containers:
+#       migrate:
+#         image:
+#           repository: "acme/migrator"
+#           tag: "0.9.0"
+#         command: ["/bin/sh"]
+#         args: ["-c", "migrate up"]
+#     initContainers:
+#       wait-for-db:
+#         image:
+#           repository: "acme/wait"
+#           tag: "1.0.0"
+
+# CronJobs rendered by the optional tpl.cronjob entrypoint. tpl.deployment does not call it.
+# Unlike jobs, a cronjob REUSES the root containers: its pod is the workload pod on a
+# schedule, so "main" appears there by design.
+cronjobs: {}
+### Example
+# cronjobs:
+#   nightly:
+#     schedule: "0 2 * * *"
+#     # Forbid skips a run while the previous one is still going; Replace kills it.
+#     concurrencyPolicy: Forbid
+#     startingDeadlineSeconds: 300
+#     successfulJobsHistoryLimit: 3
+#     failedJobsHistoryLimit: 1
+#     suspend: false
+#     timeZone: "Asia/Riyadh"
+#     ttlSecondsAfterFinished: 3600
+#     backoffLimit: 2
+
 # ==============================================================================
 # Scheduling & Affinity
 # ==============================================================================

@@ -223,6 +223,8 @@ Mock consumer chart used to render and assert the tpllib library templates.
 | testFixtures | object | `{"cronjob":false,"job":false,"monitors":false,"naming":false,"pvc":false,"rbac":false}` | Gates for the entrypoint templates so each suite renders only what it asserts. |
 | jobs | object | `{}` | Job definitions consumed by templates/job.yaml. |
 | cronjobs | object | `{}` | CronJob definitions consumed by templates/cronjob.yaml. |
+| tpllib.jobs | object | `{}` |  |
+| tpllib.cronjobs | object | `{}` |  |
 | tpllib.service.default | object | `{"annotations":{},"spec":{"ports":[],"type":"ClusterIP"}}` | Default service definition. |
 | tpllib.persistence | object | `{}` |  |
 

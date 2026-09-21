@@ -64,6 +64,7 @@ jobs:
       run-unittest: true
       mock-chart: test
       chart-dir: "."
+      publish-candidate: false
 
   secret-scan:
     uses: grootan-devops/github-ci-library/.github/workflows/secret-scanning.yml@dev

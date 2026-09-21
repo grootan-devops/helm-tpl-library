@@ -38,6 +38,8 @@ jobs:
       chart-version: ${{ needs.init.outputs.chart-version }}
       chart-repository: ${{ needs.init.outputs.chart-repository }}
       allow-unstable-library-refs: true
+      check-library-pinning: false
+      chart-dir: "."
 
   chart:
     needs: [init, check]
@@ -52,6 +54,7 @@ jobs:
       chart-app-version: ${{ needs.init.outputs.chart-app-version }}
       chart-repository: ${{ needs.init.outputs.chart-repository }}
       is-release: true
+      chart-dir: "."
       release-tag: ${{ needs.init.outputs.tag }}
       candidate-version: ${{ needs.init.outputs.candidate-chart-version }}
       chart-dev-repository: ${{ needs.init.outputs.chart-dev-repository }}

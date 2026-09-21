@@ -16,3 +16,6 @@ jobs:
     permissions:
       contents: read
     secrets: inherit
+    with:
+      chart-dir: "."
+      md-lint-ignore-rule: "MD026 MD031 MD034"

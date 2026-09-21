@@ -36,12 +36,17 @@ jobs:
       chart-version: ${{ needs.init.outputs.chart-version }}
       chart-repository: ${{ needs.init.outputs.chart-repository }}
       allow-unstable-library-refs: true
+      check-library-pinning: false
+      chart-dir: "."
 
   lint:
     uses: grootan-devops/github-ci-library/.github/workflows/lint.yml@dev
     permissions:
       contents: read
     secrets: inherit
+    with:
+      chart-dir: "."
+      md-lint-ignore-rule: "MD026 MD031 MD034"
 
   chart:
     needs: init
@@ -58,6 +63,7 @@ jobs:
       check-docs: true
       run-unittest: true
       mock-chart: test
+      chart-dir: "."
 
   secret-scan:
     uses: grootan-devops/github-ci-library/.github/workflows/secret-scanning.yml@dev

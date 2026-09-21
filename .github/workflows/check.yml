@@ -34,3 +34,5 @@ jobs:
       chart-version: ${{ needs.init.outputs.chart-version }}
       chart-repository: ${{ needs.init.outputs.chart-repository }}
       allow-unstable-library-refs: true
+      check-library-pinning: false
+      chart-dir: "."

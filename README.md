@@ -23,6 +23,28 @@ dependencies:
 
 ### Chart standards to follow
 
+- **File Mounts (`mounts:`)**:
+  Every mount type takes the same block. `mountTo` **defaults to `"both"`**, so a mount that
+  omits it lands in the init containers as well as the main one — set it explicitly when that
+  is not wanted.
+
+```yaml
+mounts:
+  configmap|secret|emptyDir|pvc:
+    <mount-name>:
+      enabled: true          # optional, default true; templated
+      mountTo: "both"        # DEFAULT. "main" | "both" | a container name | a list
+      path: /etc/config      # directory the volume mounts at
+      data:                  # file name -> content (templated)
+        <filename>: |
+          ...
+      params: {}             # type-specific extras (readOnly, sizeLimit, claimName, …)
+```
+
+  `emptyDir` (scratch space, caches) and `pvc` (durable state) use the same block but carry
+  no `data:` — they are storage, not configuration. The default is set in
+  `templates/_configmaps.tpl` and `templates/_secret.tpl`.
+
 - **Chart Metadata Standard (`Chart.yaml`)**:
   Always use the standard metadata structure in consumer charts:
 

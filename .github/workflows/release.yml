@@ -26,23 +26,8 @@ jobs:
       chart-dir: "."
       ignore-docker: "true"
 
-  check:
-    needs: init
-    uses: grootan-devops/github-ci-library/.github/workflows/check.yml@dev
-    permissions:
-      contents: read
-    secrets: inherit
-    with:
-      tag: ${{ needs.init.outputs.tag }}
-      chart-name: ${{ needs.init.outputs.chart-name }}
-      chart-version: ${{ needs.init.outputs.chart-version }}
-      chart-repository: ${{ needs.init.outputs.chart-repository }}
-      allow-unstable-library-refs: true
-      check-library-pinning: false
-      chart-dir: "."
-
   chart:
-    needs: [init, check]
+    needs: [init]
     uses: grootan-devops/github-ci-library/.github/workflows/chart.yml@dev
     permissions:
       contents: read

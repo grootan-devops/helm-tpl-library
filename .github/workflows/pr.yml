@@ -46,7 +46,7 @@ jobs:
     secrets: inherit
     with:
       chart-dir: "."
-      md-lint-ignore-rule: "MD026 MD031 MD034"
+      lint-md-files: "**/*.md !**/README.md"
 
   chart:
     needs: init

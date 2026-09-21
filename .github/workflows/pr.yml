@@ -59,7 +59,7 @@ jobs:
       chart-name: ${{ needs.init.outputs.chart-name }}
       chart-version: ${{ needs.init.outputs.chart-version }}
       chart-app-version: ${{ needs.init.outputs.chart-app-version }}
-      chart-repository: ${{ needs.init.outputs.chart-repository }}
+      chart-repository: ${{ needs.init.outputs.chart-push-repository }}
       check-docs: true
       run-unittest: true
       mock-chart: test

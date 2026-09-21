@@ -1,0 +1,69 @@
+name: Release · Publish Chart
+run-name: "Release · Publish Chart · ${{ github.event_name }} · ${{ github.sha }}"
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - ".github/**"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  init:
+    uses: grootan-devops/github-ci-library/.github/workflows/init.yml@dev
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: read
+    secrets: inherit
+    with:
+      chart-dir: "."
+      ignore-docker: "true"
+
+  check:
+    needs: init
+    uses: grootan-devops/github-ci-library/.github/workflows/check.yml@dev
+    permissions:
+      contents: read
+    secrets: inherit
+    with:
+      tag: ${{ needs.init.outputs.tag }}
+      chart-name: ${{ needs.init.outputs.chart-name }}
+      chart-version: ${{ needs.init.outputs.chart-version }}
+      chart-repository: ${{ needs.init.outputs.chart-repository }}
+      allow-unstable-library-refs: true
+
+  chart:
+    needs: [init, check]
+    uses: grootan-devops/github-ci-library/.github/workflows/chart.yml@dev
+    permissions:
+      contents: read
+      packages: write
+    secrets: inherit
+    with:
+      chart-name: ${{ needs.init.outputs.chart-name }}
+      chart-version: ${{ needs.init.outputs.chart-version }}
+      chart-app-version: ${{ needs.init.outputs.chart-app-version }}
+      chart-repository: ${{ needs.init.outputs.chart-repository }}
+      is-release: true
+      release-tag: ${{ needs.init.outputs.tag }}
+      candidate-version: ${{ needs.init.outputs.candidate-chart-version }}
+      chart-dev-repository: ${{ needs.init.outputs.chart-dev-repository }}
+      check-docs: true
+
+  release:
+    needs: [init, chart]
+    uses: grootan-devops/github-ci-library/.github/workflows/release.yml@dev
+    permissions:
+      contents: write
+      actions: read
+    secrets: inherit
+    with:
+      tag: ${{ needs.init.outputs.tag }}
+      upstream-run-id: ${{ needs.init.outputs.upstream-run-id }}

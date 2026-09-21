@@ -1,0 +1,68 @@
+name: CI · PR Verification
+run-name: "CI · PR Verification · ${{ github.event_name }} · ${{ github.sha }}"
+
+on:
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  init:
+    uses: grootan-devops/github-ci-library/.github/workflows/init.yml@dev
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: read
+    secrets: inherit
+    with:
+      chart-dir: "."
+      ignore-docker: "true"
+
+  check:
+    needs: init
+    uses: grootan-devops/github-ci-library/.github/workflows/check.yml@dev
+    permissions:
+      contents: read
+    secrets: inherit
+    with:
+      tag: ${{ needs.init.outputs.tag }}
+      chart-name: ${{ needs.init.outputs.chart-name }}
+      chart-version: ${{ needs.init.outputs.chart-version }}
+      chart-repository: ${{ needs.init.outputs.chart-repository }}
+      allow-unstable-library-refs: true
+
+  lint:
+    uses: grootan-devops/github-ci-library/.github/workflows/lint.yml@dev
+    permissions:
+      contents: read
+    secrets: inherit
+
+  chart:
+    needs: init
+    uses: grootan-devops/github-ci-library/.github/workflows/chart.yml@dev
+    permissions:
+      contents: read
+      packages: write
+    secrets: inherit
+    with:
+      chart-name: ${{ needs.init.outputs.chart-name }}
+      chart-version: ${{ needs.init.outputs.chart-version }}
+      chart-app-version: ${{ needs.init.outputs.chart-app-version }}
+      chart-repository: ${{ needs.init.outputs.chart-repository }}
+      check-docs: true
+      run-unittest: true
+      mock-chart: test
+
+  secret-scan:
+    uses: grootan-devops/github-ci-library/.github/workflows/secret-scanning.yml@dev
+    permissions:
+      contents: read
+    secrets: inherit
+    with:
+      full-history: false

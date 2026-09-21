@@ -24,8 +24,8 @@
 
 Chart.lock
 .helmignore
-.gitlab-ci.yml
 .yamllint
 README.gotmpl
+.github/
 
-test
+test/

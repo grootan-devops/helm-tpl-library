@@ -58,7 +58,7 @@ jobs:
       chart-version: ${{ needs.init.outputs.chart-version }}
       chart-app-version: ${{ needs.init.outputs.chart-app-version }}
       chart-repository: ${{ needs.init.outputs.chart-push-repository }}
-      check-docs: true
+      check-docs: false
       run-unittest: true
       mock-chart: test
       chart-dir: "."

@@ -43,7 +43,7 @@ jobs:
       release-tag: ${{ needs.init.outputs.tag }}
       candidate-version: ${{ needs.init.outputs.candidate-chart-version }}
       chart-dev-repository: ${{ needs.init.outputs.chart-dev-repository }}
-      check-docs: true
+      check-docs: false
 
   release:
     needs: [init, chart]

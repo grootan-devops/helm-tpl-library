@@ -24,8 +24,16 @@
 
 Chart.lock
 .helmignore
-.yamllint
+.gitlab-ci.yml
+.yamllint.yml
 README.gotmpl
+.gitleaks.toml
+CODEOWNERS
+CONTRIBUTING.md
+LICENSE.md
+Makefile
+SECURITY.md
+VERSION
 .github/
 
 test/

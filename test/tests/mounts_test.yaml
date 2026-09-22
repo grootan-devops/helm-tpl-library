@@ -1,0 +1,215 @@
+suite: mounts and volumes (_pod.tpl volumes, _container.tpl volumeMounts, mount objects)
+templates:
+  - templates/stack.yaml
+release:
+  name: rel
+  namespace: default
+tests:
+  - it: mounts a configmap only into the containers its mountTo selects
+    values:
+      - ../values/mounts.yaml
+    asserts:
+      # "main" is a container TYPE, so it reaches every non-init container.
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: rel-shop-api-main-app-config
+            mountPath: /etc/config/app
+        documentSelector:
+          path: kind
+          value: Deployment
+      # ...and never the init container.
+      - notContains:
+          path: spec.template.spec.initContainers[0].volumeMounts
+          content:
+            name: rel-shop-api-01-db-migration-app-config
+            mountPath: /etc/config/app
+        documentSelector:
+          path: kind
+          value: Deployment
+
+  - it: reaches every container, init included, for mountTo "both"
+    values:
+      - ../values/mounts.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: rel-shop-api-main-global-settings
+            mountPath: /etc/global
+        documentSelector:
+          path: kind
+          value: Deployment
+      - contains:
+          path: spec.template.spec.initContainers[0].volumeMounts
+          content:
+            name: rel-shop-api-01-db-migration-global-settings
+            mountPath: /etc/global
+        documentSelector:
+          path: kind
+          value: Deployment
+
+  - it: matches a mountTo entry against the container NAME override
+    values:
+      - ../values/mounts.yaml
+    asserts:
+      # mountTo: ["log-shipper"] -- the override, not the map key "sidecar-logger".
+      - contains:
+          path: spec.template.spec.containers[1].volumeMounts
+          content:
+            name: rel-shop-api-sidecar-logger-by-container-name
+            mountPath: /etc/logship
+        documentSelector:
+          path: kind
+          value: Deployment
+      - notContains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: rel-shop-api-main-by-container-name
+            mountPath: /etc/logship
+        documentSelector:
+          path: kind
+          value: Deployment
+
+  - it: matches a mountTo entry against an init container map key
+    values:
+      - ../values/mounts.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.initContainers[0].volumeMounts
+          content:
+            name: rel-shop-api-01-db-migration-db-creds
+            mountPath: /tmp/db-creds
+        documentSelector:
+          path: kind
+          value: Deployment
+
+  - it: honours enabled given as the string "false"
+    values:
+      - ../values/mounts.yaml
+    asserts:
+      - notContains:
+          path: spec.template.spec.volumes
+          content:
+            name: rel-shop-api-main-disabled-string
+            configMap:
+              name: rel-shop-api-main-disabled-string
+        documentSelector:
+          path: kind
+          value: Deployment
+      - notContains:
+          path: spec.template.spec.volumes
+          content:
+            name: rel-shop-api-disabled-volume
+            persistentVolumeClaim:
+              claimName: nope
+        documentSelector:
+          path: kind
+          value: Deployment
+
+  - it: carries secret params into the volume and the mount
+    values:
+      - ../values/mounts.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: rel-shop-api-main-tls-certs
+            secret:
+              secretName: rel-shop-api-main-tls-certs
+              defaultMode: 420
+        documentSelector:
+          path: kind
+          value: Deployment
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: rel-shop-api-main-tls-certs
+            mountPath: /etc/certs
+            readOnly: true
+        documentSelector:
+          path: kind
+          value: Deployment
+
+  - it: names emptyDir and pvc volumes without a container segment
+    values:
+      - ../values/mounts.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: rel-shop-api-shared-logs
+            emptyDir:
+              medium: Memory
+              sizeLimit: 500Mi
+        documentSelector:
+          path: kind
+          value: Deployment
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: rel-shop-api-data-volume
+            persistentVolumeClaim:
+              claimName: my-persistent-claim
+        documentSelector:
+          path: kind
+          value: Deployment
+      # No claimName: falls back to <resource.name>-<mount key>.
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: rel-shop-api-scratch-volume
+            persistentVolumeClaim:
+              claimName: rel-shop-api-scratch-volume
+        documentSelector:
+          path: kind
+          value: Deployment
+      # The pvc mountPath is tpl-evaluated.
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: rel-shop-api-data-volume
+            mountPath: /data/shop
+        documentSelector:
+          path: kind
+          value: Deployment
+
+  - it: renders the backing ConfigMap and Secret objects for the mounts
+    values:
+      - ../values/mounts.yaml
+    asserts:
+      # The library emits data under `|-`, so the trailing newline is stripped.
+      - equal:
+          path: data["config.json"]
+          value: '{ "environment": "production", "retries": 5 }'
+        documentSelector:
+          path: metadata.name
+          value: rel-shop-api-main-app-config
+      # data values are tpl-evaluated.
+      - equal:
+          path: data.region
+          value: "us-east-1"
+        documentSelector:
+          path: metadata.name
+          value: rel-shop-api-main-global-settings
+      # A raw string block is emitted verbatim as the data map.
+      - equal:
+          path: data
+          value:
+            key-a: value-a
+            key-b: value-b
+        documentSelector:
+          path: metadata.name
+          value: rel-shop-api-main-raw-block
+      - equal:
+          path: stringData.password
+          value: "super-secret-db-password"
+        documentSelector:
+          path: metadata.name
+          value: rel-shop-api-01-db-migration-db-creds
+      - equal:
+          path: data["ca.crt"]
+          value: "dGVzdA=="
+        documentSelector:
+          path: metadata.name
+          value: rel-shop-api-main-tls-certs

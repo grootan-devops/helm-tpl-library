@@ -1,0 +1,6 @@
+{{- if .Values.testFixtures.cronjob }}
+{{- range $name, $cj := .Values.cronjobs }}
+{{- include "tpl.cronjob" (merge (dict "_container" $cj "name" $name) $) }}
+---
+{{- end }}
+{{- end }}

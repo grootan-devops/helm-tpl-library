@@ -1,0 +1,100 @@
+suite: env ConfigMap (_configmaps.tpl tpl.configmap.env)
+templates:
+  - templates/stack.yaml
+release:
+  name: rel
+  namespace: default
+# The generated env ConfigMap and Secret deliberately share one name
+# (<resource>-<container>-env), so documents are selected by a data key that only one
+# of the two carries.
+tests:
+  - it: renders nothing when a container declares no env
+    asserts:
+      # Service, Deployment, Ingress, HTTPRoute only.
+      - hasDocuments:
+          count: 4
+
+  - it: evaluates a templated string block, applies additional-wins precedence and drops empty values
+    values:
+      - ../values/env-precedence.yaml
+    asserts:
+      - equal:
+          path: data
+          value:
+            # Literal from the block.
+            APP_MODE: "production"
+            # {{ .Values.features.enabled | quote }} inside the block.
+            FEATURE_FLAG: "true"
+            # {{ .Values.component }} inside the block.
+            COMPONENT: "shop"
+            # sprig `merge` keeps the destination value, and the library merges the
+            # base block INTO a copy of additionalConfigmapEnvs -- so additional wins.
+            PRECEDENCE_KEY: "from-additional"
+            API_HOST: "host.com"
+            # EMPTY_VALUE and ALSO_EMPTY are absent: empty strings are skipped.
+        documentSelector:
+          path: data.APP_MODE
+          value: "production"
+      - equal:
+          path: metadata.name
+          value: rel-shop-api-main-env
+        documentSelector:
+          path: data.APP_MODE
+          value: "production"
+      - isKind:
+          of: ConfigMap
+        documentSelector:
+          path: data.APP_MODE
+          value: "production"
+
+  - it: accepts a plain map as well as a string block, and stringifies values
+    values:
+      - ../values/env-precedence.yaml
+    asserts:
+      - equal:
+          path: data
+          value:
+            CONCURRENCY: "4"
+            QUEUE: "additional-wins"
+        documentSelector:
+          path: data.CONCURRENCY
+          value: "4"
+      - equal:
+          path: metadata.name
+          value: rel-shop-api-worker-env
+        documentSelector:
+          path: data.CONCURRENCY
+          value: "4"
+
+  - it: resolves sibling service names and self references inside the env block
+    values:
+      - ../values/siblings.yaml
+    asserts:
+      - equal:
+          path: data
+          value:
+            # No hardcoded URL: falls back to the sibling service name.
+            ACCESS_HOST_INTERNAL: "http://rel-access"
+            # Hardcoded URL wins over the sibling fallback.
+            KB_HOST_INTERNAL: "http://kb.external.svc.cluster.local:8080"
+            SELF_HOST: "http://rel-shop-api"
+        documentSelector:
+          path: data.SELF_HOST
+          value: "http://rel-shop-api"
+
+  - it: carries the standard labels onto the generated ConfigMap
+    values:
+      - ../values/env-precedence.yaml
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: rel-shop-api
+        documentSelector:
+          path: data.APP_MODE
+          value: "production"
+      - equal:
+          path: metadata.labels["app.kubernetes.io/component"]
+          value: shop-api
+        documentSelector:
+          path: data.APP_MODE
+          value: "production"

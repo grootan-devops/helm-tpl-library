@@ -1,0 +1,93 @@
+suite: rbac (_rbac.tpl)
+templates:
+  - templates/rbac.yaml
+release:
+  name: rel
+  namespace: default
+tests:
+  - it: emits Role metadata that a consumer can append rules to
+    values:
+      - ../values/rbac.yaml
+    asserts:
+      - hasDocuments:
+          count: 4
+      - equal:
+          path: metadata.name
+          value: rel-shop-api
+        documentSelector:
+          path: kind
+          value: Role
+      - isAPIVersion:
+          of: rbac.authorization.k8s.io/v1
+        documentSelector:
+          path: kind
+          value: Role
+      # The rules block comes from the consumer chart, not the library.
+      - equal:
+          path: rules
+          value:
+            - apiGroups: [""]
+              resources: ["configmaps"]
+              verbs: ["get", "list", "watch"]
+        documentSelector:
+          path: kind
+          value: Role
+
+  - it: binds the Role to the generated ServiceAccount
+    values:
+      - ../values/rbac.yaml
+    asserts:
+      - equal:
+          path: subjects[0].kind
+          value: ServiceAccount
+        documentSelector:
+          path: kind
+          value: RoleBinding
+      - equal:
+          path: subjects[0].name
+          value: rel-shop-api
+        documentSelector:
+          path: kind
+          value: RoleBinding
+      - equal:
+          path: roleRef.kind
+          value: Role
+        documentSelector:
+          path: kind
+          value: RoleBinding
+      - equal:
+          path: roleRef.name
+          value: rel-shop-api
+        documentSelector:
+          path: kind
+          value: RoleBinding
+
+  - it: suffixes cluster-scoped names with the release namespace
+    values:
+      - ../values/rbac.yaml
+    asserts:
+      - equal:
+          path: metadata.name
+          value: rel-shop-api-default
+        documentSelector:
+          path: kind
+          value: ClusterRole
+      - equal:
+          path: metadata.name
+          value: rel-shop-api-default
+        documentSelector:
+          path: kind
+          value: ClusterRoleBinding
+      - equal:
+          path: roleRef.name
+          value: rel-shop-api-default
+        documentSelector:
+          path: kind
+          value: ClusterRoleBinding
+      # A ClusterRoleBinding subject must carry the namespace explicitly.
+      - equal:
+          path: subjects[0].namespace
+          value: default
+        documentSelector:
+          path: kind
+          value: ClusterRoleBinding

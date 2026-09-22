@@ -1,0 +1,150 @@
+suite: deployment (_deployment.tpl)
+templates:
+  - templates/stack.yaml
+release:
+  name: rel
+  namespace: default
+tests:
+  - it: renders the default Deployment shape
+    asserts:
+      - isKind:
+          of: Deployment
+        documentSelector:
+          path: kind
+          value: Deployment
+      - isAPIVersion:
+          of: apps/v1
+        documentSelector:
+          path: kind
+          value: Deployment
+      - equal:
+          path: metadata.name
+          value: rel-shop-api
+        documentSelector:
+          path: kind
+          value: Deployment
+      - equal:
+          path: spec.replicas
+          value: 1
+        documentSelector:
+          path: kind
+          value: Deployment
+      - equal:
+          path: spec.revisionHistoryLimit
+          value: 0
+        documentSelector:
+          path: kind
+          value: Deployment
+      - equal:
+          path: spec.strategy
+          value:
+            type: RollingUpdate
+            rollingUpdate:
+              maxSurge: 25%
+              maxUnavailable: 50%
+        documentSelector:
+          path: kind
+          value: Deployment
+
+  - it: drops spec.replicas whenever autoscaling is enabled
+    values:
+      - ../values/autoscaling.yaml
+    asserts:
+      - notExists:
+          path: spec.replicas
+        documentSelector:
+          path: kind
+          value: Deployment
+
+  - it: keeps replicas suppressed even when autoscaling renders no HPA
+    values:
+      - ../values/autoscaling-no-metrics.yaml
+    asserts:
+      - notExists:
+          path: spec.replicas
+        documentSelector:
+          path: kind
+          value: Deployment
+      # Service, Deployment, Ingress, HTTPRoute -- and no HorizontalPodAutoscaler.
+      - hasDocuments:
+          count: 4
+
+  - it: stamps a checksum annotation per container env source plus the mounts digest
+    values:
+      - ../values/containers-multi.yaml
+    asserts:
+      - exists:
+          path: spec.template.metadata.annotations["checksum/configmap-main-env"]
+        documentSelector:
+          path: kind
+          value: Deployment
+      - exists:
+          path: spec.template.metadata.annotations["checksum/secret-main-env"]
+        documentSelector:
+          path: kind
+          value: Deployment
+      - exists:
+          path: spec.template.metadata.annotations["checksum/configmap-sidecar-logger-env"]
+        documentSelector:
+          path: kind
+          value: Deployment
+      - exists:
+          path: spec.template.metadata.annotations["checksum/configmap-init-01-db-migration-env"]
+        documentSelector:
+          path: kind
+          value: Deployment
+      - exists:
+          path: spec.template.metadata.annotations["checksum/secret-init-01-db-migration-env"]
+        documentSelector:
+          path: kind
+          value: Deployment
+      - exists:
+          path: spec.template.metadata.annotations["checksum/mounts"]
+        documentSelector:
+          path: kind
+          value: Deployment
+      # pod.annotations are merged in alongside the checksums.
+      - equal:
+          path: spec.template.metadata.annotations["prometheus.io/scrape"]
+          value: "true"
+        documentSelector:
+          path: kind
+          value: Deployment
+
+  - it: changes the env checksum when the env content changes
+    values:
+      - ../values/env-precedence.yaml
+    asserts:
+      # Empty env hashes to sha256("{}\n"); any real content must differ.
+      - notEqual:
+          path: spec.template.metadata.annotations["checksum/configmap-main-env"]
+          value: "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+        documentSelector:
+          path: kind
+          value: Deployment
+      - notEqual:
+          path: spec.template.metadata.annotations["checksum/secret-main-env"]
+          value: "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+        documentSelector:
+          path: kind
+          value: Deployment
+
+  - it: hashes empty env to the digest of an empty map
+    asserts:
+      - equal:
+          path: spec.template.metadata.annotations["checksum/configmap-main-env"]
+          value: "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+        documentSelector:
+          path: kind
+          value: Deployment
+      - equal:
+          path: spec.template.metadata.annotations["checksum/secret-main-env"]
+          value: "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+        documentSelector:
+          path: kind
+          value: Deployment
+
+  - it: renders exactly Service, Deployment, Ingress and HTTPRoute by default
+    asserts:
+      - hasDocuments:
+          count: 4

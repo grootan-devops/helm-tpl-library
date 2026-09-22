@@ -1,0 +1,81 @@
+suite: service (_svc.tpl)
+# Where more than one Service renders, the default one is selected by its unique
+# spec.type -- `kind: Service` would match several documents.
+templates:
+  - templates/stack.yaml
+release:
+  name: rel
+  namespace: default
+tests:
+  - it: names the `default` service after the resource and the rest with a suffix
+    values:
+      - ../values/service-multi.yaml
+    asserts:
+      - isKind:
+          of: Service
+        documentSelector:
+          path: metadata.name
+          value: rel-shop-api-headless
+      - equal:
+          path: metadata.annotations
+          value:
+            service.beta.kubernetes.io/aws-load-balancer-type: nlb
+        documentSelector:
+          path: spec.type
+          value: LoadBalancer
+      - equal:
+          path: metadata.name
+          value: rel-shop-api
+        documentSelector:
+          path: spec.type
+          value: LoadBalancer
+      - equal:
+          path: spec.ports
+          value:
+            - name: http
+              port: 80
+              targetPort: 8080
+              protocol: TCP
+            - name: metrics
+              port: 9090
+              targetPort: 9090
+              protocol: TCP
+        documentSelector:
+          path: spec.type
+          value: LoadBalancer
+
+  - it: passes the raw spec of an extra service through, including clusterIP None
+    values:
+      - ../values/service-multi.yaml
+    asserts:
+      - equal:
+          path: spec.clusterIP
+          value: None
+        documentSelector:
+          path: metadata.name
+          value: rel-shop-api-headless
+      # Every service selects the same pods.
+      - equal:
+          path: spec.selector
+          value:
+            app.kubernetes.io/name: rel-shop-api
+            app.kubernetes.io/instance: rel
+            app.kubernetes.io/service: rel-shop-api
+        documentSelector:
+          path: metadata.name
+          value: rel-shop-api-headless
+
+  - it: renders an empty default service when no ports are configured
+    asserts:
+      - equal:
+          path: spec.type
+          value: ClusterIP
+        documentSelector:
+          path: kind
+          value: Service
+      - equal:
+          path: spec.ports
+          value: []
+        documentSelector:
+          path: kind
+          value: Service

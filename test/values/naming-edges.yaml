@@ -1,0 +1,25 @@
+# Truncation, overrides and label extras for the pure naming helpers.
+testFixtures:
+  naming: true
+
+nameOverride: "shopoverride"
+
+global:
+  releaseNameLength: 6
+  partOf: "commerce-platform"
+  additionalLabels:
+    owner: "platform-team"
+    tier: "backend"
+
+service:
+  default:
+    annotations: {}
+    spec:
+      type: ClusterIP
+      ports:
+        # 8081, not 80, so a named-port resolution is distinguishable from the
+        # resolver's fallback of 80.
+        - name: http
+          port: 8081
+          targetPort: 8080
+          protocol: TCP

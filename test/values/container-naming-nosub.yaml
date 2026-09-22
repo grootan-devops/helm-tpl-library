@@ -1,0 +1,12 @@
+# Same scheme with subComponent unset: the prefix collapses to <component>.
+component: "billing"
+subComponent: ""
+containers:
+  main:
+    image:
+      repository: "acme/billing"
+initContainers:
+  wait-for-db:
+    image:
+      repository: "acme/wait"
+      tag: "1.0.0"

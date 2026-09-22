@@ -1,0 +1,740 @@
+# Baseline values for the tpllib render fixture.
+# This is a VERBATIM copy of the library's own values.yaml (a consumer chart must
+# supply the full value tree at the root - library-chart values are not inherited),
+# with only the minimum filled in so a Deployment renders. Scenario files in
+# ./values/ layer overrides on top of this.
+
+# ==============================================================================
+# Global Configuration
+# ==============================================================================
+
+global:
+  # -- Length of the release name to form cross-service resource names.
+  # WARNING: Changing this on an existing release may break resource binding.
+  # @section -- Global Settings
+  releaseNameLength: 6
+
+  image:
+    # -- Global Docker image registry (e.g., docker.io, quay.io).
+    # @section -- Global Settings
+    registry: "cr.io"
+    # -- Image pull policy. Defaults to IfNotPresent.
+    # Ref: https://kubernetes.io/docs/concepts/containers/images/#image-pull-policy
+    # @section -- Global Settings
+    pullPolicy: IfNotPresent
+    # -- List of image pull secrets for private registries.
+    # Ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+    # @section -- Global Settings
+    pullSecrets:
+      - cr-cred
+
+  routes:
+    # -- Base routing domain name (e.g., contoso.com).
+    # @section -- Global Settings
+    domain: ""
+    # -- Ingress class name for Ingress resources (e.g., nginx, apisix).
+    # @section -- Global Settings
+    ingressClass: ""
+    # -- Ingress TLS secret name.
+    # @section -- Global Settings
+    tlsSecretName: ""
+    gateway:
+      # -- Target Gateway name for HTTPRoute parentRefs.
+      # @section -- Global Settings
+      name: "default-gateway"
+      # -- Target Gateway namespace for HTTPRoute parentRefs.
+      # @section -- Global Settings
+      namespace: "gateway-system"
+      # -- Gateway class name (e.g., gateway, apisix).
+      # @section -- Global Settings
+      class: "gateway"
+
+  metrics:
+    # -- Prometheus ServiceMonitor/PodMonitor.
+    # @section -- Global Settings
+    enabled: false
+    # -- Additional labels to attach to the generated ServiceMonitor/PodMonitor.
+    # @section -- Global Settings
+    additionalLabels: {}
+
+  tracing:
+    # -- Enable or disable distributed tracing.
+    # Ref: https://opentelemetry.io/docs/concepts/observability-primer/#tracing
+    # @section -- Observability Settings
+    enabled: false
+
+    # -- If true, disables TLS/SSL verification for the tracing endpoint.
+    # Use only for local development or internal networks.
+    # @section -- Observability Settings
+    insecure: true
+
+    # -- The OTLP endpoint URL to send traces to (e.g., Jaeger, Tempo, Otel Collector).
+    # @section -- Observability Settings
+    endpoint: http://localhost:4317
+
+    # Ref: https://opentelemetry.io/docs/concepts/sampling/
+    sampler:
+      # -- The sampling probability (0.0 to 1.0).
+      # 1.0 samples every trace; 0.0 samples nothing.
+      # Ref: https://opentelemetry.io/docs/concepts/sampling/
+      # @section -- Observability Settings
+      ratio: 1.0
+
+      # -- The sampling strategy to use.
+      # Common values: parentbased_always_on, parentbased_traceidratio, always_on, always_off, traceidratio.
+      # @section -- Observability Settings
+      type: parentbased_always_on
+
+    auth:
+      # -- Username for Basic Auth (if required by the collector).
+      # @section -- Observability Settings
+      username: ""
+
+      # -- Password for Basic Auth (if required by the collector).
+      # @section -- Observability Settings
+      password: ""
+
+  # -- Additional labels to be applied to all resources.
+  # @section -- Global Settings
+  additionalLabels: {}
+
+  # -- Shared name segment, often used for labeling (e.g., app.kubernetes.io/part-of).
+  # @section -- Global Settings
+  partOf: ""
+
+# -- Overrides the name of the component. Used in labels and resource naming.
+# @section -- Common Settings
+component: "shop"
+
+# -- Sub-component name override.
+# @section -- Common Settings
+subComponent: "api"
+
+# ==============================================================================
+# Workload & Container Configuration
+# ==============================================================================
+
+# -- Number of desired pods.
+# @section -- Workload Settings
+replicas: 1
+
+# -- Revision history limit for the Deployment (keeps X old ReplicaSets).
+# @section -- Workload Settings
+revisionHistoryLimit: 0
+
+# -- Strategy for replacing old pods with new ones.
+# Ref: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy
+# @section -- Workload Settings
+# @default -- Check values.yaml
+strategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxSurge: 25%
+    maxUnavailable: 50%
+
+# -- Restart policy for all containers in the pod.
+# Ref: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy
+# @section -- Workload Settings
+restartPolicy: Always
+
+# -- Init Container configuration.
+# @section -- Container Settings
+initContainers: {}
+
+containers:
+  main:
+    # -- Override the container name. Defaults to the map key (e.g., 'main') or component name.
+    # @section -- Container Settings
+    name: ""
+
+    # -- Override container entrypoint (command).
+    # @section -- Container Settings
+    command: []
+    ### Example
+    # command:
+    #   - /bin/sh
+
+    # -- Override container arguments.
+    # @section -- Container Settings
+    args: []
+    ### Example
+    # args:
+    #   - "-c"
+    #   - "echo hello world && sleep 3600"
+
+    image:
+      # -- Image repository.
+      # @section -- Container Settings
+      repository: "acme/shop-api"
+      # -- Tag defaults to Chart.appVersion if left empty.
+      # @section -- Container Settings
+      tag: ""
+
+    # -- Direct environment variables. High precedence.
+    # @section -- Container Settings
+    env: []
+    ### Example
+    # env:
+    #   - name: LOG_LEVEL
+    #     value: "debug"
+    #   - name: POD_IP
+    #     valueFrom:
+    #       fieldRef:
+    #         fieldPath: status.podIP
+
+    # -- Security context for the container (Standard Non-Root).
+    # Ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
+    # @section -- Container Settings
+    # @default -- Check values.yaml
+    securityContext:
+      privileged: false
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: false
+      capabilities:
+        drop:
+          - ALL
+
+    # -- CPU/Memory resource requests and limits.
+    # Ref: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+    # @section -- Container Settings
+    resources: {}
+    ### Example
+    # resources:
+    #   limits:
+    #     cpu: "1"
+    #     memory: 1Gi
+    #   requests:
+    #     cpu: 100m
+    #     memory: 128Mi
+
+    # -- Resize policy for CPU/Memory.
+    # Ref: https://kubernetes.io/docs/tasks/configure-pod-container/resize-container-resources/
+    # @section -- Container Settings
+    resizePolicy: []
+    ### Example
+    # resizePolicy:
+    #   - resourceName: cpu
+    #     restartPolicy: NotRequired
+    #   - resourceName: memory
+    #     restartPolicy: RestartContainer
+
+    # -- ConfigMap-based environment variables. Templated string (Key: Value).
+    # @section -- Container Settings
+    configmapEnvs: {}
+    ### Example
+    # configmapEnvs: |
+    #   APP_MODE: "production"
+    #   FEATURE_FLAG: {{ .Values.features.enabled | quote }}
+
+    # -- Secret-based environment variables. Templated string (Key: Value).
+    # @section -- Container Settings
+    secretEnvs: {}
+    ### Example
+    # secretEnvs: |
+    #   DB_PASSWORD: {{ .Values.database.password }}
+
+    # -- Extra mappings for ConfigMaps that need custom handling.
+    # @section -- Container Settings
+    additionalConfigmapEnvs: {}
+    ### Example
+    # additionalConfigmapEnvs:
+    #   API_HOST: host.com
+
+    # -- Extra mappings for Secrets that need custom handling.
+    # @section -- Container Settings
+    additionalSecretEnvs: {}
+    ### Example
+    # additionalSecretEnvs:
+    #   API_KEY: api-key-value
+
+    # -- List of existing ConfigMaps to inject as environment variables (envFrom).
+    # @section -- Container Settings
+    extraConfigmapMounts: []
+    ### Example
+    # extraConfigmapMounts:
+    #   - name: common-config
+
+    # -- List of existing Secrets to inject as environment variables (envFrom).
+    # @section -- Container Settings
+    extraSecretMounts: []
+    ### Example
+    # extraSecretMounts:
+    #   - name: database-credentials
+
+    probes:
+      # -- Enable probes.
+      # Ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
+      # @section -- Container Settings
+      enabled: true
+
+      # -- Readiness probe configuration.
+      # Ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
+      # @section -- Container Settings
+      readiness: {}
+      ### Example
+      # readiness:
+      #   httpGet:
+      #     path: /health
+      #     port: 8080
+      #   initialDelaySeconds: 10
+      #   periodSeconds: 10
+      #   timeoutSeconds: 10
+      #   successThreshold: 1
+      #   failureThreshold: 3
+
+      # -- Liveness probe configuration.
+      # Ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
+      # @section -- Container Settings
+      liveness: {}
+      ## liveness
+      # readiness:
+      #   httpGet:
+      #     path: /health
+      #     port: 8080
+      #   initialDelaySeconds: 30
+      #   periodSeconds: 30
+      #   timeoutSeconds: 10
+      #   successThreshold: 1
+      #   failureThreshold: 3
+
+      # -- Startup probe configuration.
+      # Ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
+      # @section -- Container Settings
+      startup: {}
+      ### Example
+      # startup:
+      #   tcpSocket:
+      #     port: 8080
+      #   initialDelaySeconds: 10
+      #   periodSeconds: 10
+      #   timeoutSeconds: 10
+      #   successThreshold: 1
+      #   failureThreshold: 3
+
+serviceAccount:
+  # -- Create ServiceAccount resource.
+  # Ref: https://kubernetes.io/docs/concepts/security/service-accounts/
+  # @section -- Workload Settings
+  create: false
+  # -- ServiceAccount annotations.
+  # @section -- Workload Settings
+  annotations: {}
+  ### Example
+  # create: true
+  # annotations:
+  #   eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/my-app-role
+
+# -- HostAliases to inject into /etc/hosts.
+# Ref: https://kubernetes.io/docs/tasks/network/customize-hosts-file-for-pods/
+# @section -- Workload Settings
+hostAliases: []
+### Example
+# hostAliases:
+#   - ip: "127.0.0.1"
+#     hostnames:
+#     - "foo.local"
+#     - "bar.local"
+
+pod:
+  # -- Annotations to add to the Pod metadata.
+  # @section -- Workload Settings
+  annotations: {}
+  ### Example
+  # annotations:
+  #   prometheus.io/scrape: "true"
+  #   prometheus.io/port: "8080"
+
+  # -- Pod-level Security Context (applied to all containers).
+  # Ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
+  # @section -- Workload Settings
+  # @default -- Check values.yaml
+  securityContext:
+    runAsUser: 10001
+    runAsGroup: 10001
+    runAsNonRoot: true
+    fsGroup: 10001
+    fsGroupChangePolicy: OnRootMismatch
+    seccompProfile:
+      type: RuntimeDefault
+
+# ==============================================================================
+# Scheduling & Affinity
+# ==============================================================================
+
+scheduling:
+  # -- Spread pods across failure domains (zones, nodes).
+  # Ref: https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/
+  # @section -- Scheduling Settings
+  topologySpreadConstraints: []
+  ### Example
+  # topologySpreadConstraints:
+  #   - maxSkew: 1
+  #     topologyKey: topology.kubernetes.io/zone
+  #     whenUnsatisfiable: ScheduleAnyway
+  #     labelSelector:
+  #       matchLabels:
+  #         app: my-app
+
+  # -- Simple node selection constraints (Key: Value).
+  # Ref: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/
+  # @section -- Scheduling Settings
+  nodeSelector: {}
+  ### Example
+  # nodeSelector:
+  #   disktype: ssd
+
+  # -- Allow pods to schedule on tainted nodes.
+  # Ref: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/
+  # @section -- Scheduling Settings
+  tolerations: []
+  ### Example
+  # tolerations:
+  #   - key: "gpu"
+  #     operator: "Equal"
+  #     value: "true"
+  #     effect: "NoSchedule"
+
+  # -- Complex node/pod affinity rules.
+  # Ref: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/
+  # @section -- Scheduling Settings
+  affinity: {}
+  ### Example
+  # affinity:
+  #   podAntiAffinity:
+  #     requiredDuringSchedulingIgnoredDuringExecution:
+  #     - labelSelector:
+  #         matchExpressions:
+  #         - key: app
+  #           operator: In
+  #           values:
+  #           - store
+  #       topologyKey: "kubernetes.io/hostname"
+
+# ==============================================================================
+# Networking
+# ==============================================================================
+
+service:
+  # -- Default service definition.
+  default:
+    # -- Service annotations.
+    # @section -- Networking Settings
+    annotations: {}
+    # -- Kubernetes Service specification.
+    # Ref: https://kubernetes.io/docs/concepts/services-networking/service/
+    # @section -- Networking Settings
+    spec:
+      type: ClusterIP
+      ports: []
+  ### Example
+  # default:
+  #   annotations:
+  #     service.beta.kubernetes.io/aws-load-balancer-type: nlb
+  #   spec:
+  #     type: LoadBalancer
+  #     ports:
+  #       - name: http
+  #         port: 80
+  #         targetPort: 8080
+  #         protocol: TCP
+
+routes:
+  default:
+    # -- Master switch to enable routing for this route definition.
+    # @section -- Networking Settings
+    enabled: true
+
+    # -- Render Kubernetes Ingress (networking.k8s.io/v1).
+    # @section -- Networking Settings
+    ingress: true
+
+    # -- Render Kubernetes Gateway API HTTPRoute (gateway.networking.k8s.io/v1).
+    # @section -- Networking Settings
+    httpRoute: true
+
+    # -- Host header domain. Evaluated via tpl.
+    # @section -- Networking Settings
+    host: "{{ $.Values.component }}.{{ $.Values.global.routes.domain }}"
+
+    # -- Optional list of hostnames. Overrides host if specified.
+    # @section -- Networking Settings
+    hosts: []
+
+    # -- Ingress class name for Ingress spec.ingressClassName. Defaults to global.routes.ingressClass.
+    # @section -- Networking Settings
+    ingressClass: ""
+
+    # -- Secret name for Ingress TLS termination. Defaults to global.routes.tlsSecretName.
+    # @section -- Networking Settings
+    tlsSecretName: ""
+
+    gateway:
+      # -- Target Gateway name for HTTPRoute parentRefs. Defaults to global.routes.gateway.name.
+      # @section -- Networking Settings
+      name: ""
+      # -- Target Gateway namespace for HTTPRoute parentRefs. Defaults to global.routes.gateway.namespace.
+      # @section -- Networking Settings
+      namespace: ""
+      # -- Gateway class name. Defaults to global.routes.gateway.class.
+      # @section -- Networking Settings
+      class: ""
+
+    # -- Custom parentRefs override for HTTPRoute.
+    # @section -- Networking Settings
+    parentRefs: []
+
+    # -- Annotations applied to both Ingress and HTTPRoute.
+    # @section -- Networking Settings
+    annotations: {}
+
+    # -- Path routing rules (compatible with both Ingress and HTTPRoute).
+    # Ref: https://gateway-api.sigs.k8s.io/reference/api-spec/main/spec/#httprouterule
+    # @section -- Networking Settings
+    paths: []
+    ### Example
+    # paths:
+    #   - name: "api-v1-canary"
+    #     matches:
+    #       - path:
+    #           type: PathPrefix
+    #           value: "/api/v1"
+    #         method: GET
+    #         headers:
+    #           - name: "X-Version"
+    #             value: "v1"
+    #         queryParams:
+    #           - name: "env"
+    #             value: "production"
+    #       - path:
+    #           type: PathPrefix
+    #           value: "/api/v1/preview"
+    #         method: GET
+    #     filters:
+    #       - type: RequestHeaderModifier
+    #         requestHeaderModifier:
+    #           set:
+    #             - name: "X-Forwarded-Proto"
+    #               value: "https"
+    #           add:
+    #             - name: "X-Request-Source"
+    #               value: "gateway-api"
+    #       - type: ResponseHeaderModifier
+    #         responseHeaderModifier:
+    #           set:
+    #             - name: "X-Content-Type-Options"
+    #               value: "nosniff"
+    #     timeouts:
+    #       request: 10s
+    #       backendRequest: 2s
+    #     retry:
+    #       attempts: 3
+    #       codes: [502, 503, 504]
+    #       backoff: 100ms
+    #     sessionPersistence:
+    #       type: Cookie
+    #       cookieConfig:
+    #         name: "ROUTECOOKIE"
+    #         lifetimeType: Permanent
+    #     backendRefs:
+    #       - name: api-service-v1
+    #         port: 8080
+    #         weight: 90
+    #       - name: api-service-v2
+    #         port: 8080
+    #         weight: 10
+    #   - name: "secure-endpoint"
+    #     path: /secure
+    #     pathType: Prefix
+    #     filters:
+    #       - type: ExtensionRef
+    #         extensionRef:
+    #           group: "security.networking.k8s.io"
+    #           kind: "AuthenticationPolicy"
+    #           name: "strict-jwt-auth"
+    #     backend:
+    #       service:
+    #         name: api-service
+    #         port:
+    #           number: 8080
+    #   - name: "doc-rewrite"
+    #     path: /docs
+    #     pathType: Prefix
+    #     filters:
+    #       - type: URLRewrite
+    #         urlRewrite:
+    #           path:
+    #             type: ReplacePrefixMatch
+    #             replacePrefixMatch: /swagger-ui/index.html
+    #     backend:
+    #       service:
+    #         name: api-service
+    #         port:
+    #           number: 8080
+
+networkPolicy:
+  # -- Enable NetworkPolicy.
+  # Ref: https://kubernetes.io/docs/concepts/services-networking/network-policies/
+  # @section -- Networking Settings
+  enabled: false
+  # -- Ingress network rules.
+  # @section -- Networking Settings
+  ingressRule: []
+  # -- Egress network rules.
+  # @section -- Networking Settings
+  egressRule: []
+  ### Example
+  # enabled: true
+  # ingressRule:
+  #   - from:
+  #       - podSelector:
+  #           matchLabels:
+  #             role: frontend
+  #     ports:
+  #       - protocol: TCP
+  #         port: 8080
+
+# ==============================================================================
+# Storage & Persistence
+# ==============================================================================
+
+persistence: {}
+
+mounts:
+  # -- Secret volume mounts.
+  # @section -- Storage Settings
+  secret: {}
+  # -- ConfigMap volume mounts.
+  # @section -- Storage Settings
+  configmap: {}
+  # -- EmptyDir volume mounts.
+  # @section -- Storage Settings
+  emptyDir: {}
+  # -- PersistentVolumeClaim mounts.
+  # @section -- Storage Settings
+  pvc: {}
+  ### Example
+  # mounts:
+  #   pvc:
+  #     data-volume:
+  #       enabled: true
+  #       mountTo: "main"
+  #       path: /var/lib/data
+  #       claimName: my-pvc-claim
+  #       params:
+  #         readOnly: false
+  #   secret:
+  #     tls-certs:
+  #       mountTo: "main"
+  #       path: /etc/certs
+  #       data:
+  #         ca.crt: "..."
+  #   configmap:
+  #     app-config:
+  #       enabled: true
+  #       mountTo: ["main"]
+  #       path: "/etc/config/app"
+  #       data:
+  #         config.json: |
+  #           { "environment": "production", "retries": 5 }
+  #   emptyDir:
+  #     cache-vol:
+  #       mountTo: "both" # main and init container
+  #       path: /tmp/cache
+  #       params:
+  #         sizeLimit: 500Mi
+
+# ==============================================================================
+# Operations & Scaling
+# ==============================================================================
+
+pdb:
+  # -- Enable PodDisruptionBudget.
+  # Ref: https://kubernetes.io/docs/tasks/run-application/configure-pdb/
+  # @section -- Operations Settings
+  enabled: false
+  # -- Minimum available pods.
+  # @section -- Operations Settings
+  minAvailable: ""
+  # -- Maximum unavailable pods.
+  # @section -- Operations Settings
+  maxUnavailable: 2
+
+autoscaling:
+  # -- Enable HPA.
+  # Ref: https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/
+  # @section -- Operations Settings
+  enabled: false
+  # -- Minimum pod replicas.
+  # @section -- Operations Settings
+  minReplicas: 1
+  # -- Maximum pod replicas.
+  # @section -- Operations Settings
+  maxReplicas: 3
+  # -- Resource metrics targets.
+  # @section -- Operations Settings
+  metrics: []
+  ### Example
+  # metrics:
+  #   - type: Resource
+  #     resource:
+  #       name: cpu
+  #       target:
+  #         type: Utilization
+  #         averageUtilization: 60
+  #   - type: Resource
+  #     resource:
+  #       name: memory
+  #       target:
+  #         type: Utilization
+  #         averageUtilization: 80
+  # -- Scale up behavior policy.
+  # @section -- Operations Settings
+  scaleUp: {}
+  # -- Scale down behavior policy.
+  # @section -- Operations Settings
+  scaleDown: {}
+  ### Examples
+  # scaleDown/ScaleUp:
+  #   stabilizationWindowSeconds: 0
+  #   policies:
+  #   - type: Percent
+  #     value: 100
+  #     periodSeconds: 15
+  #   - type: Pods
+  #     value: 4
+  #     periodSeconds: 15
+  #   selectPolicy: Max
+
+metrics:
+  # -- Job label for ServiceMonitor metrics.
+  # Ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/user-guides/getting-started.md
+  # @section -- Operations Settings
+  jobLabel: "app_kubernetes_io_instance"
+  # -- List of scrape endpoints.
+  # @section -- Operations Settings
+  endpoints: []
+  ### Example
+  # endpoints:
+  #   - port: http-metrics
+  #     path: /metrics
+  #     interval: 15s
+  #     scrapeTimeout: 10s
+
+# ==============================================================================
+# Fixture-only settings (not part of the library contract)
+# ==============================================================================
+
+# -- Gates for the entrypoint templates so each suite renders only what it asserts.
+testFixtures:
+  job: false
+  cronjob: false
+  monitors: false
+  rbac: false
+  naming: false
+  pvc: false
+
+# -- Job definitions consumed by templates/job.yaml.
+jobs: {}
+
+# -- CronJob definitions consumed by templates/cronjob.yaml.
+cronjobs: {}

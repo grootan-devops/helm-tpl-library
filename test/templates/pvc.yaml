@@ -1,0 +1,3 @@
+{{- if .Values.testFixtures.pvc }}
+{{- include "tpl.pvc" . }}
+{{- end }}

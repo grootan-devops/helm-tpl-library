@@ -1,0 +1,117 @@
+# Multiple main containers + init containers: naming, tpl'd command/args, probes,
+# resizePolicy, per-container registry/tag overrides, envFrom from extra mounts.
+component: "shop"
+subComponent: "api"
+
+initContainers:
+  01-db-migration:
+    image:
+      repository: "acme/migrator"
+      tag: "0.9.0"
+    command: ["/bin/sh"]
+    args:
+      - "-c"
+      - "migrate --target {{ .Values.component }}"
+    probes:
+      enabled: false
+      liveness:
+        httpGet:
+          path: /healthz
+          port: 8080
+
+containers:
+  main:
+    image:
+      repository: "acme/{{ .Values.component }}-api"
+    env:
+      - name: LOG_LEVEL
+        value: "debug"
+      - name: POD_IP
+        valueFrom:
+          fieldRef:
+            fieldPath: status.podIP
+    resizePolicy:
+      - resourceName: cpu
+        restartPolicy: NotRequired
+    resources:
+      limits:
+        cpu: "1"
+        memory: 1Gi
+      requests:
+        cpu: 100m
+        memory: 128Mi
+    extraConfigmapMounts:
+      - common-config
+    extraSecretMounts:
+      - database-credentials
+    probes:
+      enabled: true
+      liveness:
+        httpGet:
+          path: /healthz
+          port: 8080
+      readiness:
+        httpGet:
+          path: /ready
+          port: 8080
+      startup:
+        tcpSocket:
+          port: 8080
+  sidecar-logger:
+    # Explicit name override wins over the map key.
+    name: "log-shipper"
+    image:
+      registry: "docker.io"
+      repository: "fluent/fluent-bit"
+      tag: "2.2.0"
+    probes:
+      enabled: true
+      liveness:
+        httpGet:
+          path: /
+          port: 2020
+
+service:
+  default:
+    annotations: {}
+    spec:
+      type: ClusterIP
+      ports:
+        - name: http
+          port: 80
+          targetPort: 8080
+          protocol: TCP
+
+hostAliases:
+  - ip: "127.0.0.1"
+    hostnames:
+      - "foo.local"
+
+scheduling:
+  nodeSelector:
+    disktype: ssd
+  tolerations:
+    - key: "gpu"
+      operator: "Equal"
+      value: "true"
+      effect: "NoSchedule"
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: topology.kubernetes.io/zone
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: shop
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchExpressions:
+              - key: app
+                operator: In
+                values: ["shop"]
+          topologyKey: "kubernetes.io/hostname"
+
+pod:
+  annotations:
+    prometheus.io/scrape: "true"

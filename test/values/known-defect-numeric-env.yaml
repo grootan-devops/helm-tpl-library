@@ -1,0 +1,11 @@
+# KNOWN DEFECT — map-form configmapEnvs/secretEnvs with a non-string value.
+# _configmaps.tpl and _secret.tpl compare with `ne $v ""`, which Go templates reject
+# for a float64 vs string, so the render fails instead of quoting the number.
+# Asserted as a currently-failing render in tests/known_defects_test.yaml; when the
+# library is fixed that suite goes red and should be converted into a passing case.
+containers:
+  main:
+    image:
+      repository: "acme/shop-api"
+    configmapEnvs:
+      CONCURRENCY: 4

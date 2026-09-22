@@ -1,0 +1,35 @@
+# HTTPRoute only. Gateway resolution chain, hostnames, default backend, port resolver.
+global:
+  routes:
+    domain: "contoso.com"
+    gateway:
+      name: "default-gateway"
+      namespace: "gateway-system"
+      class: "gateway"
+
+service:
+  default:
+    annotations: {}
+    spec:
+      type: ClusterIP
+      ports:
+        - name: http
+          port: 80
+          targetPort: 8080
+          protocol: TCP
+        - name: grpc
+          port: 50051
+          targetPort: 50051
+          protocol: TCP
+
+routes:
+  # inherits the global gateway
+  default:
+    enabled: true
+    ingress: false
+    httpRoute: true
+    host: "{{ $.Values.component }}.{{ $.Values.global.routes.domain }}"
+    paths:
+      - path: /
+        pathType: Prefix
+        port: http

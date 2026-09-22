@@ -1,0 +1,125 @@
+suite: routes -> HTTPRoute (_routes.tpl)
+templates:
+  - templates/stack.yaml
+release:
+  name: rel
+  namespace: default
+tests:
+  - it: renders an HTTPRoute and no Ingress when ingress is false
+    values:
+      - ../values/routes-httproute.yaml
+    asserts:
+      # Service, Deployment, HTTPRoute.
+      - hasDocuments:
+          count: 3
+      - isKind:
+          of: HTTPRoute
+        documentSelector:
+          path: kind
+          value: HTTPRoute
+      - isAPIVersion:
+          of: gateway.networking.k8s.io/v1
+        documentSelector:
+          path: kind
+          value: HTTPRoute
+      - equal:
+          path: metadata.name
+          value: rel-shop-api
+        documentSelector:
+          path: kind
+          value: HTTPRoute
+
+  - it: inherits the global gateway for parentRefs
+    values:
+      - ../values/routes-httproute.yaml
+    asserts:
+      - equal:
+          path: spec.parentRefs
+          value:
+            - name: default-gateway
+              namespace: gateway-system
+        documentSelector:
+          path: kind
+          value: HTTPRoute
+      - equal:
+          path: spec.hostnames
+          value: ["shop.contoso.com"]
+        documentSelector:
+          path: kind
+          value: HTTPRoute
+
+  - it: normalizes Prefix to PathPrefix and defaults the backend to the service
+    values:
+      - ../values/routes-httproute.yaml
+    asserts:
+      - equal:
+          path: spec.rules
+          value:
+            - matches:
+                - path:
+                    type: PathPrefix
+                    value: "/"
+              backendRefs:
+                - name: rel-shop-api
+                  port: 80
+                  weight: 100
+        documentSelector:
+          path: kind
+          value: HTTPRoute
+
+  - it: lets a route override the gateway and add sectionName and port
+    values:
+      - ../values/routes-httproute-gateways.yaml
+    asserts:
+      - equal:
+          path: spec.parentRefs
+          value:
+            - name: internal-gateway
+              namespace: mesh-system
+              sectionName: https
+              port: 443
+        documentSelector:
+          path: metadata.name
+          value: rel-shop-api-internal
+
+  - it: resolves a named backend port through the default service
+    values:
+      - ../values/routes-httproute-gateways.yaml
+    asserts:
+      # port: grpc -> 50051 from service.default.spec.ports.
+      - equal:
+          path: spec.rules[0].backendRefs
+          value:
+            - name: rel-shop-api
+              port: 50051
+              weight: 100
+        documentSelector:
+          path: metadata.name
+          value: rel-shop-api-internal
+
+  - it: uses explicit parentRefs verbatim when given
+    values:
+      - ../values/routes-httproute-gateways.yaml
+    asserts:
+      - equal:
+          path: spec.parentRefs
+          value:
+            - name: byo-gateway
+              namespace: byo-system
+              sectionName: web
+        documentSelector:
+          path: metadata.name
+          value: rel-shop-api-custom-parents
+
+  - it: renders a default / rule for a route with no paths
+    values:
+      - ../values/routes-httproute-gateways.yaml
+    asserts:
+      - equal:
+          path: spec.rules[0].matches[0].path
+          value:
+            type: PathPrefix
+            value: "/"
+        documentSelector:
+          path: metadata.name
+          value: rel-shop-api-custom-parents

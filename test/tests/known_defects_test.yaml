@@ -1,0 +1,114 @@
+suite: known defects — current behaviour pinned so a fix is noticed
+# Each case documents a real bug found while building this suite. They assert what the
+# library does TODAY. When a bug is fixed the matching case turns red on purpose:
+# convert it into a passing case and delete the note.
+# Cases that target a single template still need it listed here.
+templates:
+  - templates/stack.yaml
+  - templates/cronjob.yaml
+  - templates/rbac.yaml
+release:
+  name: rel
+  namespace: default
+tests:
+  - it: fails to render a map-form env value that is not a string
+    templates:
+      - templates/stack.yaml
+    # _configmaps.tpl / _secret.tpl compare with `ne $v ""`, and Go templates refuse to
+    # compare a float64 with a string. FIX: `ne ($v | toString) ""`.
+    values:
+      - ../values/known-defect-numeric-env.yaml
+    asserts:
+      - failedTemplate:
+          errorPattern: 'incompatible types for comparison: float64 and string'
+
+  - it: fails to render a route using requestHeaders without a headersFilter key
+    templates:
+      - templates/stack.yaml
+    # _routes.tpl does `.requestHeaders | default .headersFilter.request`, and Go
+    # templates evaluate both arguments of `default`, so the missing `headersFilter`
+    # dereferences nil. FIX: guard with `if .requestHeaders` / `else if`.
+    values:
+      - ../values/known-defect-shorthand-headers.yaml
+    asserts:
+      - failedTemplate:
+          errorPattern: 'nil pointer evaluating interface \{\}\.request'
+
+  - it: creates the backing ConfigMap/Secret for every mounted volume
+    templates:
+      - templates/stack.yaml
+    # FIXED: _deployment.tpl now passes _containerType to tpl.configmap.volume /
+    # tpl.secret.volume, so a mountTo of "main" (a container TYPE) matches in the
+    # object templates exactly as it does in _container.tpl and _pod.tpl. Every
+    # volume the pod references now has a backing object.
+    values:
+      - ../values/mounts.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: rel-shop-api-sidecar-logger-app-config
+            configMap:
+              name: rel-shop-api-sidecar-logger-app-config
+        documentSelector:
+          path: kind
+          value: Deployment
+      # 4 workload + 11 mount objects: the three rel-shop-api-sidecar-logger-*
+      # objects that used to be missing are now created.
+      - hasDocuments:
+          count: 15
+
+  - it: leaves a CronJob pod with restartPolicy Always
+    # tpl.cronjob.spec reuses the Deployment pod spec verbatim, so the root
+    # `restartPolicy: Always` is inherited -- which the API server rejects for a
+    # CronJob (only OnFailure and Never are valid). FIX: default it to OnFailure in
+    # tpl.cronjob.spec the way tpl.job already does.
+    templates:
+      - templates/cronjob.yaml
+    values:
+      - ../values/job-cronjob.yaml
+    asserts:
+      - equal:
+          path: spec.jobTemplate.spec.template.spec.restartPolicy
+          value: Always
+
+  - it: points RoleBinding and ClusterRoleBinding roleRef at the empty apiGroup
+    # roleRef.apiGroup must be rbac.authorization.k8s.io; "" is rejected by the API
+    # server. Same for the ServiceAccount subject's stray apiGroup on the RoleBinding.
+    templates:
+      - templates/rbac.yaml
+    values:
+      - ../values/rbac.yaml
+    asserts:
+      - equal:
+          path: roleRef.apiGroup
+          value: ""
+        documentSelector:
+          path: kind
+          value: RoleBinding
+      - equal:
+          path: roleRef.apiGroup
+          value: ""
+        documentSelector:
+          path: kind
+          value: ClusterRoleBinding
+
+  - it: builds a route host with a trailing dot when no domain is configured
+    templates:
+      - templates/stack.yaml
+    # global.routes.domain defaults to "" and the default route host template is
+    # "{{ component }}.{{ domain }}", so the shipped defaults render "shop." as a
+    # hostname. FIX: skip the host when the domain is empty.
+    asserts:
+      - equal:
+          path: spec.rules[0].host
+          value: "shop."
+        documentSelector:
+          path: kind
+          value: Ingress
+      - equal:
+          path: spec.hostnames
+          value: ["shop."]
+        documentSelector:
+          path: kind
+          value: HTTPRoute

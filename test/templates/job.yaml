@@ -1,0 +1,5 @@
+{{- if .Values.testFixtures.job }}
+{{- range $name, $job := .Values.jobs }}
+{{- include "tpl.job" (merge (dict "_container" $job "serviceSuffix" $name) $) }}
+{{- end }}
+{{- end }}

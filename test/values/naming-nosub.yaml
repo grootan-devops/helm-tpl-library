@@ -1,0 +1,5 @@
+# No subComponent: tpl.component.name collapses to the component alone.
+testFixtures:
+  naming: true
+component: "shop"
+subComponent: ""

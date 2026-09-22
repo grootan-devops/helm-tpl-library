@@ -1,0 +1,5 @@
+# minAvailable unset: maxUnavailable is used instead.
+pdb:
+  enabled: true
+  minAvailable: ""
+  maxUnavailable: 2

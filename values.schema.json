@@ -1,0 +1,325 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "tpllib values",
+  "description": "Shape of the values tpllib renders from. Types and structure only -- no top-level `required`, because a consumer configures tpllib at the ROOT of its own values, so the subchart's own values section is validated empty and any required key would fail every consumer's render.",
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "global": {
+      "$ref": "#/$defs/global"
+    },
+    "component": {
+      "type": "string"
+    },
+    "subComponent": {
+      "type": "string"
+    },
+    "replicas": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "revisionHistoryLimit": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "restartPolicy": {
+      "type": "string",
+      "enum": [
+        "Always",
+        "OnFailure",
+        "Never"
+      ]
+    },
+    "strategy": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "initContainers": {
+      "$ref": "#/$defs/containerMap"
+    },
+    "containers": {
+      "$ref": "#/$defs/containerMap"
+    },
+    "jobs": {
+      "$ref": "#/$defs/workloadMap"
+    },
+    "cronjobs": {
+      "$ref": "#/$defs/workloadMap"
+    },
+    "serviceAccount": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "hostAliases": {
+      "type": "array"
+    },
+    "pod": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "scheduling": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "service": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "routes": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "networkPolicy": {
+      "$ref": "#/$defs/toggleable"
+    },
+    "persistence": {
+      "$ref": "#/$defs/persistenceMap"
+    },
+    "mounts": {
+      "$ref": "#/$defs/mounts"
+    },
+    "pdb": {
+      "$ref": "#/$defs/toggleable"
+    },
+    "autoscaling": {
+      "$ref": "#/$defs/autoscaling"
+    },
+    "metrics": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  },
+  "$defs": {
+    "global": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "partOf": {
+          "type": "string"
+        },
+        "releaseNameLength": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "additionalLabels": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "image": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "metrics": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "tracing": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "routes": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      }
+    },
+    "containerMap": {
+      "description": "Container name comes from the map key. `main` is reserved for the single workload container under `containers:`.",
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/container"
+      }
+    },
+    "container": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "image": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "command": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "args": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "env": {
+          "type": [
+            "object",
+            "array",
+            "string",
+            "null"
+          ]
+        },
+        "configmapEnvs": {
+          "type": [
+            "object",
+            "array",
+            "string",
+            "null"
+          ]
+        },
+        "secretEnvs": {
+          "type": [
+            "object",
+            "array",
+            "string",
+            "null"
+          ]
+        },
+        "resources": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "securityContext": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "probes": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "ports": {
+          "type": [
+            "array",
+            "object",
+            "null"
+          ]
+        }
+      }
+    },
+    "workloadMap": {
+      "description": "Jobs and cronjobs rendered by the optional tpl.job / tpl.cronjob entrypoints.",
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "schedule": {
+            "type": "string"
+          },
+          "suspend": {
+            "type": "boolean"
+          },
+          "backoffLimit": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "completions": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "parallelism": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "activeDeadlineSeconds": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "ttlSecondsAfterFinished": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "containers": {
+            "$ref": "#/$defs/containerMap"
+          },
+          "initContainers": {
+            "$ref": "#/$defs/containerMap"
+          }
+        }
+      }
+    },
+    "persistenceMap": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "existingClaim": {
+            "type": "string"
+          },
+          "storageClass": {
+            "type": "string"
+          },
+          "size": {
+            "type": [
+              "string",
+              "number"
+            ]
+          },
+          "accessModes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "volumeMode": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "mounts": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "configmap": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "secret": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "pvc": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "emptyDir": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      }
+    },
+    "toggleable": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        }
+      }
+    },
+    "autoscaling": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "minReplicas": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "maxReplicas": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    }
+  }
+}

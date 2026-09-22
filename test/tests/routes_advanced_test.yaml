@@ -1,0 +1,211 @@
+suite: routes -> HTTPRoute filters, canary and policies (_routes.tpl)
+templates:
+  - templates/stack.yaml
+release:
+  name: rel
+  namespace: default
+tests:
+  - it: serializes route plugins into the APISIX annotation
+    values:
+      - ../values/routes-advanced.yaml
+    asserts:
+      - equal:
+          path: metadata.annotations["k8s.apisix.apache.org/plugins"]
+          value: '[{"config":{"count":100,"time_window":60},"name":"limit-count"}]'
+        documentSelector:
+          path: kind
+          value: HTTPRoute
+
+  - it: renders multi-condition matches and normalizes Prefix inside them
+    values:
+      - ../values/routes-advanced.yaml
+    asserts:
+      - equal:
+          path: spec.rules[0].name
+          value: api-v1-canary
+        documentSelector:
+          path: kind
+          value: HTTPRoute
+      - equal:
+          path: spec.rules[0].matches
+          value:
+            - path:
+                type: PathPrefix
+                value: "/api/v1"
+              method: GET
+              headers:
+                - name: X-Version
+                  value: v1
+              queryParams:
+                - name: env
+                  value: production
+            # `Prefix` in a match must be rewritten to `PathPrefix`.
+            - path:
+                type: PathPrefix
+                value: "/api/v1/preview"
+              method: GET
+        documentSelector:
+          path: kind
+          value: HTTPRoute
+
+  - it: splits weighted canary traffic and resolves a named backend port
+    values:
+      - ../values/routes-advanced.yaml
+    asserts:
+      - equal:
+          path: spec.rules[0].backendRefs
+          value:
+            - name: backend-service
+              port: 80
+              weight: 90
+            # port: http resolves to 80 via service.default.spec.ports.
+            - name: backend-canary
+              port: 80
+              weight: 10
+        documentSelector:
+          path: kind
+          value: HTTPRoute
+
+  - it: passes timeouts, retry and sessionPersistence through untouched
+    values:
+      - ../values/routes-advanced.yaml
+    asserts:
+      - equal:
+          path: spec.rules[0].timeouts
+          value:
+            request: 10s
+            backendRequest: 2s
+        documentSelector:
+          path: kind
+          value: HTTPRoute
+      - equal:
+          path: spec.rules[0].retry
+          value:
+            attempts: 3
+            codes: [502, 503, 504]
+            backoff: 100ms
+        documentSelector:
+          path: kind
+          value: HTTPRoute
+      - equal:
+          path: spec.rules[0].sessionPersistence
+          value:
+            type: Cookie
+            cookieConfig:
+              name: ROUTECOOKIE
+              lifetimeType: Permanent
+        documentSelector:
+          path: kind
+          value: HTTPRoute
+
+  - it: keeps an explicitly supplied filter list as given
+    values:
+      - ../values/routes-advanced.yaml
+    asserts:
+      - equal:
+          path: spec.rules[0].filters
+          value:
+            - type: RequestHeaderModifier
+              requestHeaderModifier:
+                set:
+                  - name: X-Forwarded-Proto
+                    value: https
+        documentSelector:
+          path: kind
+          value: HTTPRoute
+
+  - it: synthesizes a URLRewrite filter and an APISIX extensionRef from shorthands
+    values:
+      - ../values/routes-advanced.yaml
+    asserts:
+      - equal:
+          path: spec.rules[1].name
+          value: shorthand-filters
+        documentSelector:
+          path: kind
+          value: HTTPRoute
+      - equal:
+          path: spec.rules[1].filters
+          value:
+            - type: URLRewrite
+              urlRewrite:
+                hostname: internal.contoso.com
+                path:
+                  type: ReplacePrefixMatch
+                  replacePrefixMatch: /swagger-ui/index.html
+            # pluginConfigName becomes an ApisixPluginConfig ExtensionRef.
+            - type: ExtensionRef
+              extensionRef:
+                group: apisix.apache.org
+                kind: ApisixPluginConfig
+                name: shop-auth
+        documentSelector:
+          path: kind
+          value: HTTPRoute
+      # The `timeout` shorthand becomes timeouts.request.
+      - equal:
+          path: spec.rules[1].timeouts
+          value:
+            request: 5s
+        documentSelector:
+          path: kind
+          value: HTTPRoute
+
+  - it: synthesizes header modifiers from the headersFilter alias
+    values:
+      - ../values/routes-advanced.yaml
+    asserts:
+      - equal:
+          path: spec.rules[2].filters
+          value:
+            - type: RequestHeaderModifier
+              requestHeaderModifier:
+                remove: ["X-Internal"]
+            - type: ResponseHeaderModifier
+              responseHeaderModifier:
+                add:
+                  - name: X-Alias
+                    value: "yes"
+        documentSelector:
+          path: kind
+          value: HTTPRoute
+
+  - it: synthesizes a RequestRedirect filter from the redirect shorthand
+    values:
+      - ../values/routes-advanced.yaml
+    asserts:
+      - equal:
+          path: spec.rules[3].filters
+          value:
+            - type: RequestRedirect
+              requestRedirect:
+                scheme: https
+                statusCode: 301
+        documentSelector:
+          path: kind
+          value: HTTPRoute
+
+  - it: keeps an explicit extensionRef and resolves a numeric backend port
+    values:
+      - ../values/routes-advanced.yaml
+    asserts:
+      - equal:
+          path: spec.rules[4].filters
+          value:
+            - type: ExtensionRef
+              extensionRef:
+                group: security.networking.k8s.io
+                kind: AuthenticationPolicy
+                name: strict-jwt-auth
+        documentSelector:
+          path: kind
+          value: HTTPRoute
+      - equal:
+          path: spec.rules[4].backendRefs
+          value:
+            - name: backend-service
+              port: 8081
+              weight: 100
+        documentSelector:
+          path: kind
+          value: HTTPRoute

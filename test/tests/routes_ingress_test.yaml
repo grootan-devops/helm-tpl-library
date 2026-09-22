@@ -1,0 +1,204 @@
+suite: routes -> Ingress (_routes.tpl)
+templates:
+  - templates/stack.yaml
+release:
+  name: rel
+  namespace: default
+tests:
+  - it: renders one Ingress for the default route
+    values:
+      - ../values/routes-ingress.yaml
+    asserts:
+      # Service, Deployment, Ingress -- httpRoute is off for this route.
+      - hasDocuments:
+          count: 3
+      - isKind:
+          of: Ingress
+        documentSelector:
+          path: kind
+          value: Ingress
+      - isAPIVersion:
+          of: networking.k8s.io/v1
+        documentSelector:
+          path: kind
+          value: Ingress
+      # The `default` route key carries no name suffix.
+      - equal:
+          path: metadata.name
+          value: rel-shop-api
+        documentSelector:
+          path: kind
+          value: Ingress
+
+  - it: resolves the host from the tpl-evaluated host field
+    values:
+      - ../values/routes-ingress.yaml
+    asserts:
+      - equal:
+          path: spec.rules[0].host
+          value: "shop.contoso.com"
+        documentSelector:
+          path: kind
+          value: Ingress
+
+  - it: prefers the route ingressClass and TLS secret over the global defaults
+    values:
+      - ../values/routes-ingress.yaml
+    asserts:
+      - equal:
+          path: spec.ingressClassName
+          value: nginx
+        documentSelector:
+          path: kind
+          value: Ingress
+      - equal:
+          path: spec.tls
+          value:
+            - secretName: shop-tls
+              hosts: ["shop.contoso.com"]
+        documentSelector:
+          path: kind
+          value: Ingress
+
+  - it: always sets the ssl-redirect annotations and tpl-evaluates the rest
+    values:
+      - ../values/routes-ingress.yaml
+    asserts:
+      - equal:
+          path: metadata.annotations
+          value:
+            nginx.ingress.kubernetes.io/ssl-redirect: "true"
+            nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+            cert-manager.io/cluster-issuer: letsencrypt-prod
+            nginx.ingress.kubernetes.io/proxy-body-size: 50m
+            x-templated-host: shop.contoso.com
+        documentSelector:
+          path: kind
+          value: Ingress
+
+  - it: normalizes PathPrefix back to Prefix and resolves each backend
+    values:
+      - ../values/routes-ingress.yaml
+    asserts:
+      - equal:
+          path: spec.rules[0].http.paths
+          value:
+            # A named port passes through as a port name.
+            - path: /api
+              pathType: Prefix
+              backend:
+                service:
+                  name: rel-shop-api
+                  port:
+                    name: http
+            # pathType PathPrefix is a Gateway API spelling; Ingress needs Prefix.
+            - path: /gw
+              pathType: Prefix
+              backend:
+                service:
+                  name: rel-shop-api
+                  port:
+                    number: 80
+            # An explicit backend overrides the default service.
+            - path: /custom
+              pathType: Exact
+              backend:
+                service:
+                  name: other-service
+                  port:
+                    number: 8081
+        documentSelector:
+          path: kind
+          value: Ingress
+
+  - it: suffixes non-default route keys and skips disabled routes
+    values:
+      - ../values/routes-ingress-hosts.yaml
+    asserts:
+      # Service, Deployment + the multihost and fallback Ingresses.
+      # The `legacy` route sets enabled: false and renders nothing.
+      - hasDocuments:
+          count: 4
+      - isKind:
+          of: Ingress
+        documentSelector:
+          path: metadata.name
+          value: rel-shop-api-multihost
+      - isKind:
+          of: Ingress
+        documentSelector:
+          path: metadata.name
+          value: rel-shop-api-fallback
+
+  - it: lets hosts[] override host and fans out one rule per host
+    values:
+      - ../values/routes-ingress-hosts.yaml
+    asserts:
+      - lengthEqual:
+          path: spec.rules
+          count: 2
+        documentSelector:
+          path: metadata.name
+          value: rel-shop-api-multihost
+      - equal:
+          path: spec.rules[0].host
+          value: "a.contoso.com"
+        documentSelector:
+          path: metadata.name
+          value: rel-shop-api-multihost
+      - equal:
+          path: spec.rules[1].host
+          value: "b.contoso.com"
+        documentSelector:
+          path: metadata.name
+          value: rel-shop-api-multihost
+      - equal:
+          path: spec.tls
+          value:
+            - secretName: wildcard-tls
+              hosts: ["a.contoso.com", "b.contoso.com"]
+        documentSelector:
+          path: metadata.name
+          value: rel-shop-api-multihost
+
+  - it: falls back to component + global.routes.domain when no host is given
+    values:
+      - ../values/routes-ingress-hosts.yaml
+    asserts:
+      - equal:
+          path: spec.rules[0].host
+          value: "shop.contoso.com"
+        documentSelector:
+          path: metadata.name
+          value: rel-shop-api-fallback
+      # Falls back to the global ingressClass and TLS secret too.
+      - equal:
+          path: spec.ingressClassName
+          value: nginx
+        documentSelector:
+          path: metadata.name
+          value: rel-shop-api-fallback
+      - equal:
+          path: spec.tls[0].secretName
+          value: wildcard-tls
+        documentSelector:
+          path: metadata.name
+          value: rel-shop-api-fallback
+
+  - it: defaults to a single / Prefix rule when a route declares no paths
+    values:
+      - ../values/routes-ingress-hosts.yaml
+    asserts:
+      - equal:
+          path: spec.rules[0].http.paths
+          value:
+            - path: /
+              pathType: Prefix
+              backend:
+                service:
+                  name: rel-shop-api
+                  port:
+                    number: 80
+        documentSelector:
+          path: metadata.name
+          value: rel-shop-api-fallback

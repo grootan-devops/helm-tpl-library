@@ -1,0 +1,14 @@
+.DS_STORE
+.DS_Store
+
+# Local credentials and generated Helm dependencies
+.env
+.env.*
+!.env.example
+charts/
+Chart.lock
+
+# Resolved file:// dependency of the render test fixture — rebuilt by `make deps`.
+test/charts/
+test/Chart.lock
+__snapshot__

@@ -1,0 +1,115 @@
+# Canary splits, every filter synthesis path, matches, timeouts, retry, session
+# persistence, APISIX plugins annotation and pluginConfigName extensionRef.
+global:
+  routes:
+    domain: "contoso.com"
+
+service:
+  default:
+    annotations: {}
+    spec:
+      type: ClusterIP
+      ports:
+        - name: http
+          port: 80
+          targetPort: 8080
+          protocol: TCP
+
+routes:
+  default:
+    enabled: true
+    ingress: false
+    httpRoute: true
+    host: "shop.contoso.com"
+    plugins:
+      - name: "limit-count"
+        config:
+          count: 100
+          time_window: 60
+    paths:
+      - name: "api-v1-canary"
+        matches:
+          - path:
+              type: PathPrefix
+              value: "/api/v1"
+            method: GET
+            headers:
+              - name: "X-Version"
+                value: "v1"
+            queryParams:
+              - name: "env"
+                value: "production"
+          # Prefix inside matches must normalize to PathPrefix.
+          - path:
+              type: Prefix
+              value: "/api/v1/preview"
+            method: GET
+        filters:
+          - type: RequestHeaderModifier
+            requestHeaderModifier:
+              set:
+                - name: "X-Forwarded-Proto"
+                  value: "https"
+        timeouts:
+          request: "10s"
+          backendRequest: "2s"
+        retry:
+          attempts: 3
+          codes: [502, 503, 504]
+          backoff: "100ms"
+        sessionPersistence:
+          type: Cookie
+          cookieConfig:
+            name: "ROUTECOOKIE"
+            lifetimeType: Permanent
+        backendRefs:
+          - name: "backend-service"
+            port: 80
+            weight: 90
+          - name: "backend-canary"
+            # Named port must resolve through service.default.spec.ports.
+            port: http
+            weight: 10
+
+      # Shorthand rewrite/redirect/headers -> synthesized filters, in library order.
+      - name: "shorthand-filters"
+        path: /shorthand
+        pathType: Prefix
+        rewrite:
+          hostname: "internal.contoso.com"
+          path: "/swagger-ui/index.html"
+        # NOTE: requestHeaders/responseHeaders without a headersFilter key currently
+        # breaks the library (see known-defect-shorthand-headers.yaml); the
+        # headersFilter alias below covers the same filters.
+        pluginConfigName: "shop-auth"
+        timeout: "5s"
+
+      # headersFilter.* alias for the same modifiers.
+      - name: "headers-filter-alias"
+        path: /alias
+        headersFilter:
+          request:
+            remove: ["X-Internal"]
+          response:
+            add:
+              - name: "X-Alias"
+                value: "yes"
+
+      - name: "legacy-redirect"
+        path: /old-portal
+        pathType: Prefix
+        redirect:
+          scheme: "https"
+          statusCode: 301
+
+      - name: "explicit-extension-ref"
+        path: /secure
+        extensionRef:
+          group: "security.networking.k8s.io"
+          kind: "AuthenticationPolicy"
+          name: "strict-jwt-auth"
+        backend:
+          service:
+            name: "backend-service"
+            port:
+              number: 8081

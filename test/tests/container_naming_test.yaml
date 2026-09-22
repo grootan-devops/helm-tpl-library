@@ -1,0 +1,172 @@
+suite: container naming (_name.tpl tpl.container.name)
+templates:
+  - templates/stack.yaml
+  - templates/job.yaml
+  - templates/cronjob.yaml
+release:
+  name: rel
+  namespace: default
+# Scheme: an explicit `name:` wins; otherwise <component>[-<subComponent>]-<key>,
+# prefixed with `init-` for init containers. No job/cronjob suffix -- a job's
+# containers live in their own pod, so there is nothing to disambiguate.
+tests:
+  - it: prefixes main containers with component-subComponent and keeps the map key
+    values:
+      - ../values/container-naming.yaml
+    template: templates/stack.yaml
+    asserts:
+      # sortAlpha over the keys: main, metrics, sidecar-logger.
+      - equal:
+          path: spec.template.spec.containers[0].name
+          value: shop-api-main
+        documentSelector:
+          path: kind
+          value: Deployment
+      - equal:
+          path: spec.template.spec.containers[1].name
+          value: shop-api-metrics
+        documentSelector:
+          path: kind
+          value: Deployment
+
+  - it: lets an explicit name win over the generated prefix
+    values:
+      - ../values/container-naming.yaml
+    template: templates/stack.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[2].name
+          value: log-shipper
+        documentSelector:
+          path: kind
+          value: Deployment
+
+  - it: prefixes init containers with init-
+    values:
+      - ../values/container-naming.yaml
+    template: templates/stack.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: init-shop-api-db-migration
+        documentSelector:
+          path: kind
+          value: Deployment
+
+  - it: reserves the key "main" for the single main workload container, rejecting it on an init container
+    values:
+      - ../values/container-naming.yaml
+    template: templates/stack.yaml
+    set:
+      initContainers:
+        main:
+          image:
+            repository: "acme/migrator"
+            tag: "0.9.0"
+    asserts:
+      - failedTemplate:
+          errorMessage: 'tpllib: the container key "main" is reserved for the single main workload container under `containers:`. Rename this init container to what it does (e.g. `db-migration`, `wait-for-db`).'
+
+  - it: rejects the key "main" on a job container
+    values:
+      - ../values/job-cronjob.yaml
+    template: templates/job.yaml
+    set:
+      jobs.migrate.containers:
+        main:
+          image:
+            repository: "acme/migrator"
+            tag: "0.9.0"
+    asserts:
+      - failedTemplate:
+          errorMessage: 'tpllib: the container key "main" is reserved for the single main workload container under `containers:`. Rename this job container to what it does (e.g. `migrate`, `backup`).'
+
+  - it: rejects the key "main" on a job init container
+    values:
+      - ../values/job-cronjob.yaml
+    template: templates/job.yaml
+    set:
+      jobs.migrate.initContainers:
+        main:
+          image:
+            repository: "acme/wait"
+            tag: "1.0.0"
+    asserts:
+      - failedTemplate:
+          errorMessage: 'tpllib: the container key "main" is reserved for the single main workload container under `containers:`. Rename this init container to what it does (e.g. `db-migration`, `wait-for-db`).'
+
+  - it: collapses the prefix to the component alone when subComponent is unset
+    values:
+      - ../values/container-naming-nosub.yaml
+    template: templates/stack.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].name
+          value: billing-main
+        documentSelector:
+          path: kind
+          value: Deployment
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: init-billing-wait-for-db
+        documentSelector:
+          path: kind
+          value: Deployment
+
+  - it: uses the same scheme for job containers, with no -job suffix
+    values:
+      - ../values/job-cronjob.yaml
+    template: templates/job.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].name
+          value: shop-api-migrate
+        documentSelector:
+          path: kind
+          value: Job
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: init-shop-api-wait-for-db
+        documentSelector:
+          path: kind
+          value: Job
+
+  - it: uses the same scheme for cronjob containers, with no -cronjob suffix
+    values:
+      - ../values/job-cronjob.yaml
+    template: templates/cronjob.yaml
+    asserts:
+      - equal:
+          path: spec.jobTemplate.spec.template.spec.containers[0].name
+          value: shop-api-main
+        documentSelector:
+          path: kind
+          value: CronJob
+
+  - it: truncates the component prefix, never the key, to stay inside 63 characters
+    values:
+      - ../values/naming-long.yaml
+    template: templates/stack.yaml
+    asserts:
+      - matchRegex:
+          path: spec.template.spec.containers[0].name
+          pattern: "^extremely-long-component-name-.*-main$"
+        documentSelector:
+          path: kind
+          value: Deployment
+      - matchRegex:
+          path: spec.template.spec.containers[0].name
+          pattern: "^.{1,63}$"
+        documentSelector:
+          path: kind
+          value: Deployment
+
+  - it: rejects a name that is not a valid DNS-1123 label
+    values:
+      - ../values/container-naming.yaml
+    template: templates/stack.yaml
+    set:
+      containers.main.name: "Shop_API"
+    asserts:
+      - failedTemplate:
+          errorMessage: 'tpllib: explicit name produced container name "Shop_API", which is not a valid DNS-1123 label (lowercase alphanumerics and ''-'', must start and end alphanumeric)'

@@ -1,0 +1,29 @@
+suite: pvc/mount pairing (_pvc.tpl + _pod.tpl)
+release:
+  name: rel
+  namespace: default
+tests:
+  - it: mounts the claim tpl.pvc creates, with no claimName written by the consumer
+    templates:
+      - templates/stack.yaml
+    values:
+      - ../values/pvc-mount-pairing.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.volumes[0].persistentVolumeClaim.claimName
+          value: rel-shop-api-data
+        documentSelector:
+          path: kind
+          value: Deployment
+
+  - it: creates the claim under that same name
+    templates:
+      - templates/pvc.yaml
+    values:
+      - ../values/pvc-mount-pairing.yaml
+    set:
+      testFixtures.pvc: true
+    asserts:
+      - equal:
+          path: metadata.name
+          value: rel-shop-api-data

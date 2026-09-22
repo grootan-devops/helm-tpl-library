@@ -1,0 +1,45 @@
+# Ingress only. Host sources, ingressClass resolution, TLS, pathType normalization.
+global:
+  routes:
+    domain: "contoso.com"
+    ingressClass: "nginx"
+    tlsSecretName: "wildcard-tls"
+
+service:
+  default:
+    annotations: {}
+    spec:
+      type: ClusterIP
+      ports:
+        - name: http
+          port: 80
+          targetPort: 8080
+          protocol: TCP
+
+routes:
+  # host: explicit, tpl-evaluated
+  default:
+    enabled: true
+    ingress: true
+    httpRoute: false
+    host: "{{ $.Values.component }}.{{ $.Values.global.routes.domain }}"
+    tlsSecretName: "shop-tls"
+    annotations:
+      cert-manager.io/cluster-issuer: "letsencrypt-prod"
+      nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+      x-templated-host: "{{ $.Values.component }}.{{ $.Values.global.routes.domain }}"
+    paths:
+      - path: /api
+        pathType: Prefix
+        port: http
+      # PathPrefix must normalize back to Prefix on an Ingress.
+      - path: /gw
+        pathType: PathPrefix
+        port: 80
+      - path: /custom
+        pathType: Exact
+        backend:
+          service:
+            name: "other-service"
+            port:
+              number: 8081

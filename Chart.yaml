@@ -1,0 +1,7 @@
+apiVersion: v2
+name: tpllib
+version: 1.0.0
+description: Helm tpl library for helm chart
+type: library
+appVersion: 1.0.0
+deprecated: false

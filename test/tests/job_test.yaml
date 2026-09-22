@@ -1,0 +1,211 @@
+suite: job (_job.tpl)
+templates:
+  - templates/job.yaml
+release:
+  name: rel
+  namespace: default
+tests:
+  - it: renders one Job per enabled definition and skips the disabled one
+    values:
+      - ../values/job-cronjob.yaml
+    asserts:
+      # Job + env Secret + env ConfigMap + ServiceAccount + token Secret.
+      - hasDocuments:
+          count: 5
+      - isKind:
+          of: Job
+        documentSelector:
+          path: kind
+          value: Job
+      - isAPIVersion:
+          of: batch/v1
+        documentSelector:
+          path: kind
+          value: Job
+      # serviceSuffix becomes the trailing name segment.
+      - equal:
+          path: metadata.name
+          value: rel-shop-api-migrate
+        documentSelector:
+          path: kind
+          value: Job
+      - equal:
+          path: metadata.annotations["helm.sh/hook"]
+          value: pre-install,pre-upgrade
+        documentSelector:
+          path: kind
+          value: Job
+
+  - it: labels the Job with its own resource name but the parent component
+    values:
+      - ../values/job-cronjob.yaml
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: rel-shop-api-migrate
+        documentSelector:
+          path: kind
+          value: Job
+      - equal:
+          path: metadata.labels["app.kubernetes.io/component"]
+          value: shop-api
+        documentSelector:
+          path: kind
+          value: Job
+
+  - it: carries the job template settings
+    values:
+      - ../values/job-cronjob.yaml
+    asserts:
+      - equal:
+          path: spec.backoffLimit
+          value: 3
+        documentSelector:
+          path: kind
+          value: Job
+      - equal:
+          path: spec.completions
+          value: 1
+        documentSelector:
+          path: kind
+          value: Job
+      - equal:
+          path: spec.parallelism
+          value: 1
+        documentSelector:
+          path: kind
+          value: Job
+      - equal:
+          path: spec.activeDeadlineSeconds
+          value: 600
+        documentSelector:
+          path: kind
+          value: Job
+      - equal:
+          path: spec.ttlSecondsAfterFinished
+          value: 120
+        documentSelector:
+          path: kind
+          value: Job
+      # suspend: false is falsy, so the key is omitted entirely.
+      - notExists:
+          path: spec.suspend
+        documentSelector:
+          path: kind
+          value: Job
+
+  - it: defaults restartPolicy to OnFailure instead of inheriting Always
+    values:
+      - ../values/job-cronjob.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.restartPolicy
+          value: OnFailure
+        documentSelector:
+          path: kind
+          value: Job
+
+  - it: uses only the job's own containers, not the workload containers
+    values:
+      - ../values/job-cronjob.yaml
+    asserts:
+      - lengthEqual:
+          path: spec.template.spec.containers
+          count: 1
+        documentSelector:
+          path: kind
+          value: Job
+      - equal:
+          path: spec.template.spec.containers[0].name
+          value: shop-api-migrate
+        documentSelector:
+          path: kind
+          value: Job
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "cr.io/acme/migrator:0.9.0"
+        documentSelector:
+          path: kind
+          value: Job
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: init-shop-api-wait-for-db
+        documentSelector:
+          path: kind
+          value: Job
+
+  - it: blanks service, autoscaling and pdb so the job pod gets no ports
+    values:
+      - ../values/job-cronjob.yaml
+    asserts:
+      # The root values enable a service with a named http port; the job must not
+      # inherit it.
+      - notExists:
+          path: spec.template.spec.containers[0].ports
+        documentSelector:
+          path: kind
+          value: Job
+
+  - it: mergeOverwrites the job serviceAccount onto the root one
+    values:
+      - ../values/job-cronjob.yaml
+    asserts:
+      # Root serviceAccount.create is false; the job sets it to true.
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: rel-shop-api-migrate
+        documentSelector:
+          path: kind
+          value: Job
+      - equal:
+          path: metadata.name
+          value: rel-shop-api-migrate
+        documentSelector:
+          path: kind
+          value: ServiceAccount
+      - equal:
+          path: metadata.annotations
+          value:
+            job-only: "yes"
+        documentSelector:
+          path: kind
+          value: ServiceAccount
+      - equal:
+          path: type
+          value: kubernetes.io/service-account-token
+        documentSelector:
+          path: metadata.name
+          value: rel-shop-api-migrate-token
+
+  - it: names the job env objects after the job, not the parent workload
+    values:
+      - ../values/job-cronjob.yaml
+    asserts:
+      # The env ConfigMap and env Secret share the name, so select by a data key.
+      - equal:
+          path: data.TARGET
+          value: "shop"
+        documentSelector:
+          path: data.TARGET
+          value: "shop"
+      - equal:
+          path: metadata.name
+          value: rel-shop-api-migrate-env
+        documentSelector:
+          path: data.TARGET
+          value: "shop"
+      - equal:
+          path: spec.template.spec.containers[0].envFrom
+          value:
+            - secretRef:
+                name: rel-shop-api-migrate-env
+            - configMapRef:
+                name: rel-shop-api-migrate-env
+        documentSelector:
+          path: kind
+          value: Job
+
+  - it: renders nothing while the fixture switch is off
+    asserts:
+      - hasDocuments:
+          count: 0

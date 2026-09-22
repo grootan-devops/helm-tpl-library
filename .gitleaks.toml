@@ -1,0 +1,16 @@
+# betterleaks / gitleaks configuration.
+# These files contain deliberately synthetic values used to exercise Helm
+# rendering and secret propagation. They are not credentials.
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Synthetic Helm fixture values"
+targetRules = ["generic-password", "generic-api-key"]
+paths = [
+  '''^example\.yaml$''',
+  '''^test/values/(mounts|env-precedence|full)\.yaml$''',
+  '''^test/tests/secret_env_test\.yaml$''',
+  '''^test/tests/__snapshot__/.*$''',
+]

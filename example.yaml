@@ -1,0 +1,454 @@
+# ==============================================================================
+# Global Configuration
+# ==============================================================================
+
+global:
+  releaseNameLength: 20
+
+  image:
+    registry: "docker.io"
+    pullPolicy: IfNotPresent
+    pullSecrets:
+      - my-docker-registry-creds
+
+  metrics:
+    enabled: true
+    additionalLabels:
+      monitoring: prometheus
+
+  routes:
+    domain: "contoso.com"
+    ingressClass: "nginx"
+    tlsSecretName: "example-com-tls"
+    gateway:
+      name: "default-gateway"
+      namespace: "gateway-system"
+      class: "gateway"
+
+  partOf: "e2e-demo-stack"
+
+  additionalLabels:
+    key1: value1
+
+component: "admin"
+subComponent: "backend"
+
+# ==============================================================================
+# Workload & Container Configuration
+# ==============================================================================
+
+replicas: 2
+revisionHistoryLimit: 5
+
+strategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxSurge: 1
+    maxUnavailable: 0
+
+restartPolicy: Always
+
+initContainers:
+  01-db-migration:
+    image:
+      repository: "contoso/db-migrator"
+      tag: "v1.2"
+    command: ["/bin/sh", "-c", "./migrate-db.sh"]
+    secretEnvs:
+      DB_PASSWORD: "secret-password-value"
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "128Mi"
+      limits:
+        cpu: "500m"
+        memory: "256Mi"
+    configmapEnvs:
+      APP_MODE: "production"
+      LOG_LEVEL: "info"
+    securityContext:
+      runAsUser: 1000
+      runAsGroup: 3000
+      runAsNonRoot: true
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+    env:
+      - name: DB_HOST
+        value: "postgres.db.svc.cluster.local"
+
+containers:
+  main:
+    name: "app-server" # Explicit override or use {{ incude "tpl.component.name" $ }} (optional)
+    image:
+      repository: "nginx"
+      tag: "alpine"
+
+    command: ["/docker-entrypoint.sh"]
+    args: ["nginx", "-g", "daemon off;"]
+
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "128Mi"
+      limits:
+        cpu: "500m"
+        memory: "256Mi"
+
+    probes:
+      enabled: true
+      liveness:
+        httpGet:
+          path: /healthz
+          port: 80
+        initialDelaySeconds: 10
+      readiness:
+        httpGet:
+          path: /ready
+          port: 80
+
+    configmapEnvs:
+      APP_MODE: "production"
+      LOG_LEVEL: "info"
+
+    secretEnvs:
+      API_KEY: "12345-secret-key"
+
+    securityContext:
+      runAsUser: 1000
+      runAsGroup: 3000
+      runAsNonRoot: true
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+
+    service:
+      default:
+        spec:
+          ports:
+            - name: http
+              port: 80
+              targetPort: 80
+              protocol: TCP
+
+  sidecar-logger:
+    image:
+      repository: "busybox"
+      tag: "latest"
+    command: ["/bin/sh", "-c", "tail -f /var/log/app/access.log"]
+    resources:
+      limits:
+        memory: "64Mi"
+
+serviceAccount:
+  create: true
+  annotations:
+    eks.amazonaws.com/role-arn: "arn:aws:iam::123456789012:role/my-app-irsa-role"
+
+hostAliases:
+  - ip: "10.0.0.5"
+    hostnames:
+      - "legacy-db.local"
+
+pod:
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "80"
+  securityContext:
+    fsGroup: 3000
+    fsGroupChangePolicy: "OnRootMismatch"
+
+# ==============================================================================
+# Scheduling & Affinity
+# ==============================================================================
+
+scheduling:
+  nodeSelector:
+    node.kubernetes.io/lifecycle: spot
+
+  tolerations:
+    - key: "dedicated"
+      operator: "Equal"
+      value: "gpu-nodes"
+      effect: "NoSchedule"
+
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: "topology.kubernetes.io/zone"
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app.kubernetes.io/component: "backend-service"
+
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm:
+            labelSelector:
+              matchExpressions:
+                - key: app.kubernetes.io/component
+                  operator: In
+                  values:
+                    - backend-service
+            topologyKey: "kubernetes.io/hostname"
+
+# ==============================================================================
+# Networking
+# ==============================================================================
+
+service:
+  default:
+    annotations:
+      service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    spec:
+      type: ClusterIP
+      ports:
+        - name: http
+          port: 80
+          targetPort: 80
+          protocol: TCP
+  # Additional Service (e.g., Headless)
+  headless:
+    spec:
+      clusterIP: None
+      ports:
+        - name: grpc
+          port: 50051
+          targetPort: 50051
+
+routes:
+  default:
+    enabled: true
+    ingress: true
+    httpRoute: true
+    host: "{{ $.Values.component }}.{{ $.Values.global.routes.domain }}"
+    gateway:
+      name: "default-gateway"
+      namespace: "gateway-system"
+      class: "gateway"
+    tlsSecretName: "admin-tls"
+    annotations:
+      cert-manager.io/cluster-issuer: "letsencrypt-prod"
+      nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    paths:
+      # Rule 1: API endpoint with multiple match conditions (OR between entries, AND within entry),
+      # Header modifiers, timeouts, experimental retry policy, and weighted canary backend split
+      - name: "api-v1-canary"
+        matches:
+          - path:
+              type: PathPrefix
+              value: "/api/v1"
+            method: GET
+            headers:
+              - name: "X-Version"
+                value: "v1"
+            queryParams:
+              - name: "env"
+                value: "production"
+          - path:
+              type: PathPrefix
+              value: "/api/v1/preview"
+            method: GET
+        # Gateway API Official Filters (RequestHeaderModifier & ResponseHeaderModifier)
+        filters:
+          - type: RequestHeaderModifier
+            requestHeaderModifier:
+              set:
+                - name: "X-Forwarded-Proto"
+                  value: "https"
+              add:
+                - name: "X-Request-Source"
+                  value: "gateway-api"
+          - type: ResponseHeaderModifier
+            responseHeaderModifier:
+              set:
+                - name: "X-Content-Type-Options"
+                  value: "nosniff"
+        # Gateway API v1.1+ Standard Timeouts
+        timeouts:
+          request: "10s"
+          backendRequest: "2s"
+        # Gateway API Experimental Retry Policy
+        retry:
+          attempts: 3
+          codes:
+            - 502
+            - 503
+            - 504
+          backoff: "100ms"
+        # Gateway API Experimental Session Persistence
+        sessionPersistence:
+          type: Cookie
+          cookieConfig:
+            name: "ROUTECOOKIE"
+            lifetimeType: Permanent
+        # Weighted Canary Traffic Split (VirtualService parity)
+        backendRefs:
+          - name: "backend-service"
+            port: 80
+            weight: 90
+          - name: "backend-canary"
+            port: 80
+            weight: 10
+
+      # Rule 2: ExtensionRef filter for vendor policy attachment
+      - name: "secure-endpoint"
+        path: "/secure"
+        pathType: Prefix
+        filters:
+          - type: ExtensionRef
+            extensionRef:
+              group: "security.networking.k8s.io"
+              kind: "AuthenticationPolicy"
+              name: "strict-jwt-auth"
+        backend:
+          service:
+            name: "backend-service"
+            port:
+              number: 80
+
+      # Rule 3: Native URL rewrite filter
+      - name: "api-documentation-rewrite"
+        path: "/docs"
+        pathType: Prefix
+        filters:
+          - type: URLRewrite
+            urlRewrite:
+              path:
+                type: ReplacePrefixMatch
+                replacePrefixMatch: "/swagger-ui/index.html"
+        backend:
+          service:
+            name: "backend-service"
+            port:
+              number: 80
+
+      # Rule 4: Native redirect filter
+      - name: "legacy-portal-redirect"
+        path: "/old-portal"
+        pathType: Prefix
+        filters:
+          - type: RequestRedirect
+            requestRedirect:
+              scheme: "https"
+              statusCode: 301
+        backend:
+          service:
+            name: "backend-service"
+            port:
+              number: 80
+
+networkPolicy:
+  enabled: true
+  ingressRule:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: "ingress-nginx"
+      ports:
+        - protocol: TCP
+          port: 80
+  egressRule:
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 169.254.169.254/32
+
+# ==============================================================================
+# Storage & Persistence (Refactored Map Structure)
+# ==============================================================================
+
+mounts:
+  configmap:
+    app-config:
+      enabled: true
+      mountTo: ["main"]
+      path: "/etc/config/app"
+      data:
+        config.json: |
+          { "environment": "production", "retries": 5 }
+
+    global-settings:
+      enabled: true
+      mountTo: "both"
+      path: "/etc/global"
+      data:
+        region: "us-east-1"
+
+  secret:
+    db-creds:
+      enabled: true
+      mountTo: ["01-db-migration"]
+      path: "/tmp/db-creds"
+      stringData:
+        password: "super-secret-db-password"
+
+  emptyDir:
+    shared-logs:
+      enabled: true
+      mountTo: ["main", "sidecar-logger"]
+      path: "/var/log/app"
+      params:
+        sizeLimit: "500Mi"
+        medium: "Memory"
+
+  pvc:
+    # claimName is omitted on purpose: it defaults to <resource name>-data-volume,
+    # which is exactly what the persistence entry below creates. Set it only to bind
+    # a claim this chart does not own.
+    data-volume:
+      enabled: true
+      mountTo: ["main"]
+      path: "/data"
+
+# Claims owned by this chart, rendered by the optional tpl.pvc entrypoint.
+persistence:
+  data-volume:
+    enabled: true
+    storageClass: "gp3"
+    size: 10Gi
+    accessModes:
+      - ReadWriteOnce
+    volumeMode: Filesystem
+    annotations:
+      helm.sh/resource-policy: keep
+
+# ==============================================================================
+# Operations & Scaling
+# ==============================================================================
+
+pdb:
+  enabled: true
+  minAvailable: "50%"
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 75
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+  scaleDown:
+    stabilizationWindowSeconds: 300
+    policies:
+      - type: Pods
+        value: 1
+        periodSeconds: 60
+
+metrics:
+  enabled: true
+  jobLabel: "app-service"
+  endpoints:
+    - port: "http"
+      path: "/metrics"
+      interval: "15s"

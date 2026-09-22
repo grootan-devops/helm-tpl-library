@@ -1,0 +1,5 @@
+# Role/RoleBinding/ClusterRole/ClusterRoleBinding metadata plus consumer-appended rules.
+testFixtures:
+  rbac: true
+serviceAccount:
+  create: true

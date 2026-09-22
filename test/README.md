@@ -2,13 +2,13 @@
 
 ![Version: 0.1.0](https://img.shields.io/badge/Version-0.1.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.4.2](https://img.shields.io/badge/AppVersion-1.4.2-informational?style=flat-square)
 
-Mock consumer chart used to render and assert the tpllib library templates.
+Mock consumer chart used to render and assert the tpl-library library templates.
 
 ## Requirements
 
 | Repository | Name | Version |
 |------------|------|---------|
-| file://.. | tpllib | 1.0.0 |
+| file://.. | tpl-library | 1.0.0 |
 
 ## Values
 
@@ -49,8 +49,8 @@ Mock consumer chart used to render and assert the tpllib library templates.
 |-----|------|---------|-------------|
 | component | string | `"shop"` | Overrides the name of the component. Used in labels and resource naming. |
 | subComponent | string | `"api"` | Sub-component name override. |
-| tpllib.component | string | `""` | Overrides the name of the component. Used in labels and resource naming. |
-| tpllib.subComponent | string | `""` | Sub-component name override. |
+| tpl-library.component | string | `""` | Overrides the name of the component. Used in labels and resource naming. |
+| tpl-library.subComponent | string | `""` | Sub-component name override. |
 
 ### Workload Settings
 
@@ -65,15 +65,15 @@ Mock consumer chart used to render and assert the tpllib library templates.
 | hostAliases | list | `[]` | HostAliases to inject into /etc/hosts. Ref: https://kubernetes.io/docs/tasks/network/customize-hosts-file-for-pods/ |
 | pod.annotations | object | `{}` | Annotations to add to the Pod metadata. |
 | pod.securityContext | object | Check values.yaml | Pod-level Security Context (applied to all containers). Ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/ |
-| tpllib.replicas | int | `1` | Number of desired pods. |
-| tpllib.revisionHistoryLimit | int | `0` | Revision history limit for the Deployment (keeps X old ReplicaSets). |
-| tpllib.strategy | object | Check values.yaml | Strategy for replacing old pods with new ones. Ref: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy |
-| tpllib.restartPolicy | string | `"Always"` | Restart policy for all containers in the pod. Ref: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy |
-| tpllib.serviceAccount.create | bool | `false` | Create ServiceAccount resource. Ref: https://kubernetes.io/docs/concepts/security/service-accounts/ |
-| tpllib.serviceAccount.annotations | object | `{}` | ServiceAccount annotations. |
-| tpllib.hostAliases | list | `[]` | HostAliases to inject into /etc/hosts. Ref: https://kubernetes.io/docs/tasks/network/customize-hosts-file-for-pods/ |
-| tpllib.pod.annotations | object | `{}` | Annotations to add to the Pod metadata. |
-| tpllib.pod.securityContext | object | Check values.yaml | Pod-level Security Context (applied to all containers). Ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/ |
+| tpl-library.replicas | int | `1` | Number of desired pods. |
+| tpl-library.revisionHistoryLimit | int | `0` | Revision history limit for the Deployment (keeps X old ReplicaSets). |
+| tpl-library.strategy | object | Check values.yaml | Strategy for replacing old pods with new ones. Ref: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy |
+| tpl-library.restartPolicy | string | `"Always"` | Restart policy for all containers in the pod. Ref: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy |
+| tpl-library.serviceAccount.create | bool | `false` | Create ServiceAccount resource. Ref: https://kubernetes.io/docs/concepts/security/service-accounts/ |
+| tpl-library.serviceAccount.annotations | object | `{}` | ServiceAccount annotations. |
+| tpl-library.hostAliases | list | `[]` | HostAliases to inject into /etc/hosts. Ref: https://kubernetes.io/docs/tasks/network/customize-hosts-file-for-pods/ |
+| tpl-library.pod.annotations | object | `{}` | Annotations to add to the Pod metadata. |
+| tpl-library.pod.securityContext | object | Check values.yaml | Pod-level Security Context (applied to all containers). Ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/ |
 
 ### Container Settings
 
@@ -99,26 +99,26 @@ Mock consumer chart used to render and assert the tpllib library templates.
 | containers.main.probes.readiness | object | `{}` | Readiness probe configuration. Ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/ |
 | containers.main.probes.liveness | object | `{}` | Liveness probe configuration. Ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/ |
 | containers.main.probes.startup | object | `{}` | Startup probe configuration. Ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/ |
-| tpllib.initContainers | object | `{}` | Init Container configuration. |
-| tpllib.containers.main.name | string | `""` | Override the container name. Defaults to the map key (e.g., 'main') or component name. |
-| tpllib.containers.main.command | list | `[]` | Override container entrypoint (command). |
-| tpllib.containers.main.args | list | `[]` | Override container arguments. |
-| tpllib.containers.main.image.repository | string | `""` | Image repository. |
-| tpllib.containers.main.image.tag | string | `""` | Tag defaults to Chart.appVersion if left empty. |
-| tpllib.containers.main.env | list | `[]` | Direct environment variables. High precedence. |
-| tpllib.containers.main.securityContext | object | Check values.yaml | Security context for the container (Standard Non-Root). Ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/ |
-| tpllib.containers.main.resources | object | `{}` | CPU/Memory resource requests and limits. Ref: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/ |
-| tpllib.containers.main.resizePolicy | list | `[]` | Resize policy for CPU/Memory. Ref: https://kubernetes.io/docs/tasks/configure-pod-container/resize-container-resources/ |
-| tpllib.containers.main.configmapEnvs | object | `{}` | ConfigMap-based environment variables. Templated string (Key: Value). |
-| tpllib.containers.main.secretEnvs | object | `{}` | Secret-based environment variables. Templated string (Key: Value). |
-| tpllib.containers.main.additionalConfigmapEnvs | object | `{}` | Extra mappings for ConfigMaps that need custom handling. |
-| tpllib.containers.main.additionalSecretEnvs | object | `{}` | Extra mappings for Secrets that need custom handling. |
-| tpllib.containers.main.extraConfigmapMounts | list | `[]` | List of existing ConfigMaps to inject as environment variables (envFrom). |
-| tpllib.containers.main.extraSecretMounts | list | `[]` | List of existing Secrets to inject as environment variables (envFrom). |
-| tpllib.containers.main.probes.enabled | bool | `true` | Enable probes. Ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/ |
-| tpllib.containers.main.probes.readiness | object | `{}` | Readiness probe configuration. Ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/ |
-| tpllib.containers.main.probes.liveness | object | `{}` | Liveness probe configuration. Ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/ |
-| tpllib.containers.main.probes.startup | object | `{}` | Startup probe configuration. Ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/ |
+| tpl-library.initContainers | object | `{}` | Init Container configuration. |
+| tpl-library.containers.main.name | string | `""` | Override the container name. Defaults to the map key (e.g., 'main') or component name. |
+| tpl-library.containers.main.command | list | `[]` | Override container entrypoint (command). |
+| tpl-library.containers.main.args | list | `[]` | Override container arguments. |
+| tpl-library.containers.main.image.repository | string | `""` | Image repository. |
+| tpl-library.containers.main.image.tag | string | `""` | Tag defaults to Chart.appVersion if left empty. |
+| tpl-library.containers.main.env | list | `[]` | Direct environment variables. High precedence. |
+| tpl-library.containers.main.securityContext | object | Check values.yaml | Security context for the container (Standard Non-Root). Ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/ |
+| tpl-library.containers.main.resources | object | `{}` | CPU/Memory resource requests and limits. Ref: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/ |
+| tpl-library.containers.main.resizePolicy | list | `[]` | Resize policy for CPU/Memory. Ref: https://kubernetes.io/docs/tasks/configure-pod-container/resize-container-resources/ |
+| tpl-library.containers.main.configmapEnvs | object | `{}` | ConfigMap-based environment variables. Templated string (Key: Value). |
+| tpl-library.containers.main.secretEnvs | object | `{}` | Secret-based environment variables. Templated string (Key: Value). |
+| tpl-library.containers.main.additionalConfigmapEnvs | object | `{}` | Extra mappings for ConfigMaps that need custom handling. |
+| tpl-library.containers.main.additionalSecretEnvs | object | `{}` | Extra mappings for Secrets that need custom handling. |
+| tpl-library.containers.main.extraConfigmapMounts | list | `[]` | List of existing ConfigMaps to inject as environment variables (envFrom). |
+| tpl-library.containers.main.extraSecretMounts | list | `[]` | List of existing Secrets to inject as environment variables (envFrom). |
+| tpl-library.containers.main.probes.enabled | bool | `true` | Enable probes. Ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/ |
+| tpl-library.containers.main.probes.readiness | object | `{}` | Readiness probe configuration. Ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/ |
+| tpl-library.containers.main.probes.liveness | object | `{}` | Liveness probe configuration. Ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/ |
+| tpl-library.containers.main.probes.startup | object | `{}` | Startup probe configuration. Ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/ |
 
 ### Scheduling Settings
 
@@ -128,10 +128,10 @@ Mock consumer chart used to render and assert the tpllib library templates.
 | scheduling.nodeSelector | object | `{}` | Simple node selection constraints (Key: Value). Ref: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/ |
 | scheduling.tolerations | list | `[]` | Allow pods to schedule on tainted nodes. Ref: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/ |
 | scheduling.affinity | object | `{}` | Complex node/pod affinity rules. Ref: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/ |
-| tpllib.scheduling.topologySpreadConstraints | list | `[]` | Spread pods across failure domains (zones, nodes). Ref: https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/ |
-| tpllib.scheduling.nodeSelector | object | `{}` | Simple node selection constraints (Key: Value). Ref: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/ |
-| tpllib.scheduling.tolerations | list | `[]` | Allow pods to schedule on tainted nodes. Ref: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/ |
-| tpllib.scheduling.affinity | object | `{}` | Complex node/pod affinity rules. Ref: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/ |
+| tpl-library.scheduling.topologySpreadConstraints | list | `[]` | Spread pods across failure domains (zones, nodes). Ref: https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/ |
+| tpl-library.scheduling.nodeSelector | object | `{}` | Simple node selection constraints (Key: Value). Ref: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/ |
+| tpl-library.scheduling.tolerations | list | `[]` | Allow pods to schedule on tainted nodes. Ref: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/ |
+| tpl-library.scheduling.affinity | object | `{}` | Complex node/pod affinity rules. Ref: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/ |
 
 ### Networking Settings
 
@@ -155,24 +155,24 @@ Mock consumer chart used to render and assert the tpllib library templates.
 | networkPolicy.enabled | bool | `false` | Enable NetworkPolicy. Ref: https://kubernetes.io/docs/concepts/services-networking/network-policies/ |
 | networkPolicy.ingressRule | list | `[]` | Ingress network rules. |
 | networkPolicy.egressRule | list | `[]` | Egress network rules. |
-| tpllib.service.default.annotations | object | `{}` | Service annotations. |
-| tpllib.service.default.spec | object | `{"ports":[],"type":"ClusterIP"}` | Kubernetes Service specification. Ref: https://kubernetes.io/docs/concepts/services-networking/service/ |
-| tpllib.routes.default.enabled | bool | `true` | Master switch to enable routing for this route definition. |
-| tpllib.routes.default.ingress | bool | `true` | Render Kubernetes Ingress (networking.k8s.io/v1). |
-| tpllib.routes.default.httpRoute | bool | `true` | Render Kubernetes Gateway API HTTPRoute (gateway.networking.k8s.io/v1). |
-| tpllib.routes.default.host | string | `"{{ $.Values.component }}.{{ $.Values.global.routes.domain }}"` | Host header domain. Evaluated via tpl. |
-| tpllib.routes.default.hosts | list | `[]` | Optional list of hostnames. Overrides host if specified. |
-| tpllib.routes.default.ingressClass | string | `""` | Ingress class name for Ingress spec.ingressClassName. Defaults to global.routes.ingressClass. |
-| tpllib.routes.default.tlsSecretName | string | `""` | Secret name for Ingress TLS termination. Defaults to global.routes.tlsSecretName. |
-| tpllib.routes.default.gateway.name | string | `""` | Target Gateway name for HTTPRoute parentRefs. Defaults to global.routes.gateway.name. |
-| tpllib.routes.default.gateway.namespace | string | `""` | Target Gateway namespace for HTTPRoute parentRefs. Defaults to global.routes.gateway.namespace. |
-| tpllib.routes.default.gateway.class | string | `""` | Gateway class name. Defaults to global.routes.gateway.class. |
-| tpllib.routes.default.parentRefs | list | `[]` | Custom parentRefs override for HTTPRoute. |
-| tpllib.routes.default.annotations | object | `{}` | Annotations applied to both Ingress and HTTPRoute. |
-| tpllib.routes.default.paths | list | `[]` | Path routing rules (compatible with both Ingress and HTTPRoute). Ref: https://gateway-api.sigs.k8s.io/reference/api-spec/main/spec/#httprouterule |
-| tpllib.networkPolicy.enabled | bool | `false` | Enable NetworkPolicy. Ref: https://kubernetes.io/docs/concepts/services-networking/network-policies/ |
-| tpllib.networkPolicy.ingressRule | list | `[]` | Ingress network rules. |
-| tpllib.networkPolicy.egressRule | list | `[]` | Egress network rules. |
+| tpl-library.service.default.annotations | object | `{}` | Service annotations. |
+| tpl-library.service.default.spec | object | `{"ports":[],"type":"ClusterIP"}` | Kubernetes Service specification. Ref: https://kubernetes.io/docs/concepts/services-networking/service/ |
+| tpl-library.routes.default.enabled | bool | `true` | Master switch to enable routing for this route definition. |
+| tpl-library.routes.default.ingress | bool | `true` | Render Kubernetes Ingress (networking.k8s.io/v1). |
+| tpl-library.routes.default.httpRoute | bool | `true` | Render Kubernetes Gateway API HTTPRoute (gateway.networking.k8s.io/v1). |
+| tpl-library.routes.default.host | string | `"{{ $.Values.component }}.{{ $.Values.global.routes.domain }}"` | Host header domain. Evaluated via tpl. |
+| tpl-library.routes.default.hosts | list | `[]` | Optional list of hostnames. Overrides host if specified. |
+| tpl-library.routes.default.ingressClass | string | `""` | Ingress class name for Ingress spec.ingressClassName. Defaults to global.routes.ingressClass. |
+| tpl-library.routes.default.tlsSecretName | string | `""` | Secret name for Ingress TLS termination. Defaults to global.routes.tlsSecretName. |
+| tpl-library.routes.default.gateway.name | string | `""` | Target Gateway name for HTTPRoute parentRefs. Defaults to global.routes.gateway.name. |
+| tpl-library.routes.default.gateway.namespace | string | `""` | Target Gateway namespace for HTTPRoute parentRefs. Defaults to global.routes.gateway.namespace. |
+| tpl-library.routes.default.gateway.class | string | `""` | Gateway class name. Defaults to global.routes.gateway.class. |
+| tpl-library.routes.default.parentRefs | list | `[]` | Custom parentRefs override for HTTPRoute. |
+| tpl-library.routes.default.annotations | object | `{}` | Annotations applied to both Ingress and HTTPRoute. |
+| tpl-library.routes.default.paths | list | `[]` | Path routing rules (compatible with both Ingress and HTTPRoute). Ref: https://gateway-api.sigs.k8s.io/reference/api-spec/main/spec/#httprouterule |
+| tpl-library.networkPolicy.enabled | bool | `false` | Enable NetworkPolicy. Ref: https://kubernetes.io/docs/concepts/services-networking/network-policies/ |
+| tpl-library.networkPolicy.ingressRule | list | `[]` | Ingress network rules. |
+| tpl-library.networkPolicy.egressRule | list | `[]` | Egress network rules. |
 
 ### Storage Settings
 
@@ -182,10 +182,10 @@ Mock consumer chart used to render and assert the tpllib library templates.
 | mounts.configmap | object | `{}` | ConfigMap volume mounts. |
 | mounts.emptyDir | object | `{}` | EmptyDir volume mounts. |
 | mounts.pvc | object | `{}` | PersistentVolumeClaim mounts. |
-| tpllib.mounts.secret | object | `{}` | Secret volume mounts. |
-| tpllib.mounts.configmap | object | `{}` | ConfigMap volume mounts. |
-| tpllib.mounts.emptyDir | object | `{}` | EmptyDir volume mounts. |
-| tpllib.mounts.pvc | object | `{}` | PersistentVolumeClaim mounts. |
+| tpl-library.mounts.secret | object | `{}` | Secret volume mounts. |
+| tpl-library.mounts.configmap | object | `{}` | ConfigMap volume mounts. |
+| tpl-library.mounts.emptyDir | object | `{}` | EmptyDir volume mounts. |
+| tpl-library.mounts.pvc | object | `{}` | PersistentVolumeClaim mounts. |
 
 ### Operations Settings
 
@@ -202,17 +202,17 @@ Mock consumer chart used to render and assert the tpllib library templates.
 | autoscaling.scaleDown | object | `{}` | Scale down behavior policy. |
 | metrics.jobLabel | string | `"app_kubernetes_io_instance"` | Job label for ServiceMonitor metrics. Ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/user-guides/getting-started.md |
 | metrics.endpoints | list | `[]` | List of scrape endpoints. |
-| tpllib.pdb.enabled | bool | `false` | Enable PodDisruptionBudget. Ref: https://kubernetes.io/docs/tasks/run-application/configure-pdb/ |
-| tpllib.pdb.minAvailable | string | `""` | Minimum available pods. |
-| tpllib.pdb.maxUnavailable | int | `2` | Maximum unavailable pods. |
-| tpllib.autoscaling.enabled | bool | `false` | Enable HPA. Ref: https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/ |
-| tpllib.autoscaling.minReplicas | int | `1` | Minimum pod replicas. |
-| tpllib.autoscaling.maxReplicas | int | `3` | Maximum pod replicas. |
-| tpllib.autoscaling.metrics | list | `[]` | Resource metrics targets. |
-| tpllib.autoscaling.scaleUp | object | `{}` | Scale up behavior policy. |
-| tpllib.autoscaling.scaleDown | object | `{}` | Scale down behavior policy. |
-| tpllib.metrics.jobLabel | string | `"app_kubernetes_io_instance"` | Job label for ServiceMonitor metrics. Ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/user-guides/getting-started.md |
-| tpllib.metrics.endpoints | list | `[]` | List of scrape endpoints. |
+| tpl-library.pdb.enabled | bool | `false` | Enable PodDisruptionBudget. Ref: https://kubernetes.io/docs/tasks/run-application/configure-pdb/ |
+| tpl-library.pdb.minAvailable | string | `""` | Minimum available pods. |
+| tpl-library.pdb.maxUnavailable | int | `2` | Maximum unavailable pods. |
+| tpl-library.autoscaling.enabled | bool | `false` | Enable HPA. Ref: https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/ |
+| tpl-library.autoscaling.minReplicas | int | `1` | Minimum pod replicas. |
+| tpl-library.autoscaling.maxReplicas | int | `3` | Maximum pod replicas. |
+| tpl-library.autoscaling.metrics | list | `[]` | Resource metrics targets. |
+| tpl-library.autoscaling.scaleUp | object | `{}` | Scale up behavior policy. |
+| tpl-library.autoscaling.scaleDown | object | `{}` | Scale down behavior policy. |
+| tpl-library.metrics.jobLabel | string | `"app_kubernetes_io_instance"` | Job label for ServiceMonitor metrics. Ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/user-guides/getting-started.md |
+| tpl-library.metrics.endpoints | list | `[]` | List of scrape endpoints. |
 
 ### Other Values
 
@@ -223,10 +223,10 @@ Mock consumer chart used to render and assert the tpllib library templates.
 | testFixtures | object | `{"cronjob":false,"job":false,"monitors":false,"naming":false,"pvc":false,"rbac":false}` | Gates for the entrypoint templates so each suite renders only what it asserts. |
 | jobs | object | `{}` | Job definitions consumed by templates/job.yaml. |
 | cronjobs | object | `{}` | CronJob definitions consumed by templates/cronjob.yaml. |
-| tpllib.jobs | object | `{}` |  |
-| tpllib.cronjobs | object | `{}` |  |
-| tpllib.service.default | object | `{"annotations":{},"spec":{"ports":[],"type":"ClusterIP"}}` | Default service definition. |
-| tpllib.persistence | object | `{}` |  |
+| tpl-library.jobs | object | `{}` |  |
+| tpl-library.cronjobs | object | `{}` |  |
+| tpl-library.service.default | object | `{"annotations":{},"spec":{"ports":[],"type":"ClusterIP"}}` | Default service definition. |
+| tpl-library.persistence | object | `{}` |  |
 
 ----------------------------------------------
 Autogenerated from chart metadata using [helm-docs v1.14.2](https://github.com/norwoodj/helm-docs/releases/v1.14.2)

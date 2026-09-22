@@ -33,7 +33,7 @@ jobs:
     with:
       tag: ${{ needs.init.outputs.tag }}
       chart-name: ${{ needs.init.outputs.chart-name }}
-      chart-version: ${{ needs.init.outputs.chart-version }}
+      chart-version: ${{ needs.init.outputs.chart-push-version }}
       chart-repository: ${{ needs.init.outputs.chart-repository }}
       chart-dir: "."
 

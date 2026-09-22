@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "tpllib values",
-  "description": "Shape of the values tpllib renders from. Types and structure only -- no top-level `required`, because a consumer configures tpllib at the ROOT of its own values, so the subchart's own values section is validated empty and any required key would fail every consumer's render.",
+  "title": "tpl-library values",
+  "description": "Shape of the values tpl-library renders from. Types and structure only -- no top-level `required`, because a consumer configures tpl-library at the ROOT of its own values, so the subchart's own values section is validated empty and any required key would fail every consumer's render.",
   "type": "object",
   "additionalProperties": true,
   "properties": {

@@ -65,7 +65,7 @@ tests:
             tag: "0.9.0"
     asserts:
       - failedTemplate:
-          errorMessage: 'tpllib: the container key "main" is reserved for the single main workload container under `containers:`. Rename this init container to what it does (e.g. `db-migration`, `wait-for-db`).'
+          errorMessage: 'tpl-library: the container key "main" is reserved for the single main workload container under `containers:`. Rename this init container to what it does (e.g. `db-migration`, `wait-for-db`).'
 
   - it: rejects the key "main" on a job container
     values:
@@ -79,7 +79,7 @@ tests:
             tag: "0.9.0"
     asserts:
       - failedTemplate:
-          errorMessage: 'tpllib: the container key "main" is reserved for the single main workload container under `containers:`. Rename this job container to what it does (e.g. `migrate`, `backup`).'
+          errorMessage: 'tpl-library: the container key "main" is reserved for the single main workload container under `containers:`. Rename this job container to what it does (e.g. `migrate`, `backup`).'
 
   - it: rejects the key "main" on a job init container
     values:
@@ -93,7 +93,7 @@ tests:
             tag: "1.0.0"
     asserts:
       - failedTemplate:
-          errorMessage: 'tpllib: the container key "main" is reserved for the single main workload container under `containers:`. Rename this init container to what it does (e.g. `db-migration`, `wait-for-db`).'
+          errorMessage: 'tpl-library: the container key "main" is reserved for the single main workload container under `containers:`. Rename this init container to what it does (e.g. `db-migration`, `wait-for-db`).'
 
   - it: collapses the prefix to the component alone when subComponent is unset
     values:
@@ -169,4 +169,4 @@ tests:
       containers.main.name: "Shop_API"
     asserts:
       - failedTemplate:
-          errorMessage: 'tpllib: explicit name produced container name "Shop_API", which is not a valid DNS-1123 label (lowercase alphanumerics and ''-'', must start and end alphanumeric)'
+          errorMessage: 'tpl-library: explicit name produced container name "Shop_API", which is not a valid DNS-1123 label (lowercase alphanumerics and ''-'', must start and end alphanumeric)'

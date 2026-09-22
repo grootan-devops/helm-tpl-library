@@ -1,4 +1,4 @@
-# Baseline values for the tpllib render fixture.
+# Baseline values for the tpl-library render fixture.
 # This is a VERBATIM copy of the library's own values.yaml (a consumer chart must
 # supply the full value tree at the root - library-chart values are not inherited),
 # with only the minimum filled in so a Deployment renders. Scenario files in

@@ -73,10 +73,10 @@ Create resorce name for token.
 {{- $isInit := eq ($._containerType | default "") "init" -}}
 {{- if eq $key "main" -}}
 {{- if $isInit -}}
-{{- fail "tpllib: the container key \"main\" is reserved for the single main workload container under `containers:`. Rename this init container to what it does (e.g. `db-migration`, `wait-for-db`)." -}}
+{{- fail "tpl-library: the container key \"main\" is reserved for the single main workload container under `containers:`. Rename this init container to what it does (e.g. `db-migration`, `wait-for-db`)." -}}
 {{- end -}}
 {{- if eq ($.Values._workload | default "") "job" -}}
-{{- fail "tpllib: the container key \"main\" is reserved for the single main workload container under `containers:`. Rename this job container to what it does (e.g. `migrate`, `backup`)." -}}
+{{- fail "tpl-library: the container key \"main\" is reserved for the single main workload container under `containers:`. Rename this job container to what it does (e.g. `migrate`, `backup`)." -}}
 {{- end -}}
 {{- end -}}
 {{- $prefix := "" -}}
@@ -85,7 +85,7 @@ Create resorce name for token.
 {{- end -}}
 {{- $budget := sub 63 (add (len $prefix) (len $key) 1) | int -}}
 {{- if lt $budget 1 -}}
-{{- fail (printf "tpllib: container key %q is too long to build a name within the 63-character limit; shorten the key or set an explicit `name:`" $key) -}}
+{{- fail (printf "tpl-library: container key %q is too long to build a name within the 63-character limit; shorten the key or set an explicit `name:`" $key) -}}
 {{- end -}}
 {{- $comp := include "tpl.component.name" $ | trunc $budget | trimSuffix "-" -}}
 {{- $out := printf "%s%s-%s" $prefix $comp $key | trimSuffix "-" | trimPrefix "-" -}}
@@ -95,7 +95,7 @@ Create resorce name for token.
 
 {{- define "tpl.container.name.validate" -}}
 {{- if not (regexMatch "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$" .out) -}}
-{{- fail (printf "tpllib: %s produced container name %q, which is not a valid DNS-1123 label (lowercase alphanumerics and '-', must start and end alphanumeric)" .src .out) -}}
+{{- fail (printf "tpl-library: %s produced container name %q, which is not a valid DNS-1123 label (lowercase alphanumerics and '-', must start and end alphanumeric)" .src .out) -}}
 {{- end -}}
 {{- .out -}}
 {{- end -}}

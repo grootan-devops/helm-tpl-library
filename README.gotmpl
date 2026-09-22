@@ -13,14 +13,19 @@
 ## Usage:
 
 ```console
-helm registry login oci-registry-endpoint --username registry-username --password registry-password
+helm registry login registry-1.docker.io --username registry-username --password-stdin
 ```
+
+On Docker Hub, the push target is the Grootan namespace root. Helm appends the
+chart name, so `tpl-library` is published at
+`oci://registry-1.docker.io/grootantech/tpl-library`; candidate and release
+versions use the same repository.
 
 ```yaml
 dependencies:
-  - name: tpllib
+  - name: tpl-library
     version: 1.0.0
-    repository: oci://registry-endpoint/registry-name
+    repository: oci://registry-1.docker.io/grootantech
 ```
 
 **Note:** Check `values.yaml` and reference for more examples and usage of Kubernetes objects.
@@ -41,7 +46,7 @@ maintainers:
   - name: DevOps
     email: devops@contoso.com
 dependencies:
-  - name: tpllib
+  - name: tpl-library
     version: 1.0.0
     repository: oci://registry.contoso.com/helm
 icon: `app-logo`
@@ -71,12 +76,12 @@ deprecated: false
   too long to fit that budget fails the render rather than producing a truncated name.
 
   **`main` is reserved** for the single main workload container under `containers:`.
-  `tpllib` fails the render if it is used as an init container key or as a
+  `tpl-library` fails the render if it is used as an init container key or as a
   `jobs.<job>.containers` key. It does **not** apply to `cronjobs:`, which reuse the root
   `containers:` and therefore run `main` in their pod by design.
 
 - **Template Invocation Standards (`templates/manifest.yaml`)**:
-  Use the below `tpllib` template functions to generate Kubernetes resources:
+  Use the below `tpl.*` template functions from `tpl-library` to generate Kubernetes resources:
 
 ```yaml
 {{`{{- include "tpl.servicemonitor" . }}`}}
@@ -187,7 +192,7 @@ mounts:
 
 
 - **Values Key-Value Comments Law (Standard for Init and Update)**:
-  - **No Comments on Parent/Root Keys**: Root keys and container mapping keys (e.g., `containers:`, `containers.main:`, `global:`, `database:`, `storage:`) must **never** have `# --` comments because they contain children. Only leaf properties or objects rendered with `toYaml` in `tpllib` receive comments.
+  - **No Comments on Parent/Root Keys**: Root keys and container mapping keys (e.g., `containers:`, `containers.main:`, `global:`, `database:`, `storage:`) must **never** have `# --` comments because they contain children. Only leaf properties or objects rendered with `toYaml` in `tpl-library` receive comments.
   - **Primitive Values (`string`, `int`, `bool`, scalar arrays)**:
     Must include `# -- Description` and `# @section -- Section Name`:
     ```yaml
@@ -198,7 +203,7 @@ mounts:
         name: ""
     ```
   - **Complex Objects & `toYaml` Rendering (`# @default -- Check values.yaml`)**:
-    For complex structures (`securityContext`, `resources`, `probes`, `strategy`) rendered via `toYaml` in `tpllib`, annotate with `# @default -- Check values.yaml` to prevent ugly, multi-line table distortion in generated documentation:
+    For complex structures (`securityContext`, `resources`, `probes`, `strategy`) rendered via `toYaml` in `tpl-library`, annotate with `# @default -- Check values.yaml` to prevent ugly, multi-line table distortion in generated documentation:
     ```yaml
         # -- Security context for the container (Standard Non-Root).
         # Ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
@@ -290,10 +295,10 @@ mounts:
     - **Secrets**: Application secrets must be declared under `.Values.secrets` (e.g., `appSecret`, `jwtSecret`, `apiTokenSalt`).
 
 - **Modular JSON Schema Architecture (`values.schema.json`)**:
-  - `tpllib` ships its own `values.schema.json` describing the shape above, with reusable
+  - `tpl-library` ships its own `values.schema.json` describing the shape above, with reusable
     `$defs` (`containerMap`, `container`, `workloadMap`, `persistenceMap`, `mounts`,
     `toggleable`, `autoscaling`). Consumer charts model theirs on it.
-  - It carries **no top-level `required`**, deliberately. A consumer configures `tpllib` at
+  - It carries **no top-level `required`**, deliberately. A consumer configures `tpl-library` at
     the root of its own values, so the subchart's values section is validated empty — any
     required key there would fail every consumer's render.
   - Types and enums only: `replicas` must be an integer, `restartPolicy` one of
@@ -304,7 +309,7 @@ mounts:
   - `Role` and `RoleBinding` require dedicated configuration beyond basic template inclusion. Verify permissions carefully.
 
 - **Automated Documentation Synchronization**:
-  - Keep `tpllib` dependency and `README.md` up to date.
+  - Keep the `tpl-library` dependency and `README.md` up to date.
   - Always follow the values comments law for every new or updated property.
   - Regenerate `README.md` using `helm-docs` on every `values.yaml` change:
     ```console
@@ -313,7 +318,7 @@ mounts:
 
 ## Testing
 
-`tpllib` is a library chart, so it cannot be rendered on its own. `test` is a
+`tpl-library` is a library chart, so it cannot be rendered on its own. `test` is a
 mock consumer chart that depends on this library through `file://..` and calls every
 `tpl.*` entrypoint; [helm-unittest](https://github.com/helm-unittest/helm-unittest) then
 asserts the rendered output for both the default values and each override scenario.
@@ -366,7 +371,7 @@ GitHub, the chart test job on GitLab). The question is what those tests should a
 at this version: resource naming, pod and container spec, Service, Ingress and HTTPRoute,
 mounts and PVC pairing, RBAC, HPA, PDB, NetworkPolicy, labels, metrics, env precedence, and
 the job and cronjob workloads. A consumer chart that re-asserts a rendered `spec:` is
-testing `tpllib`, not itself — it duplicates work, and it breaks on a library upgrade that
+testing `tpl-library`, not itself — it duplicates work, and it breaks on a library upgrade that
 was correct.
 
 **Cover what only this chart knows**: the values it declares, and what the library does with

@@ -1,5 +1,5 @@
 apiVersion: v2
-name: tpllib
+name: tpl-library
 version: 1.0.0
 description: Helm tpl library for helm chart
 type: library

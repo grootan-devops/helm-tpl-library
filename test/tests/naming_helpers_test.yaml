@@ -39,7 +39,7 @@ tests:
       - equal:
           path: data.fullname
           value: "shop-production-release-shopoverride"
-      # helm.sh/chart comes from the CONSUMER chart, not from tpllib.
+      # helm.sh/chart comes from the CONSUMER chart, not from tpl-library.
       - equal:
           path: data.chart
           value: "mock-app-0.1.0"

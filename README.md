@@ -2,7 +2,7 @@
 
 [Compatibility](https://github.com/grootan-devops/ai-skills/blob/main/COMPATIBILITY.md) · [Security](./SECURITY.md) · [Reporting policy](./CONTRIBUTING.md)
 
-![Version: 1.0.0](https://img.shields.io/badge/Version-1.0.0-informational?style=flat-square) ![Type: library](https://img.shields.io/badge/Type-library-informational?style=flat-square) ![AppVersion: 1.0.0](https://img.shields.io/badge/AppVersion-1.0.0-informational?style=flat-square)
+![Version: 1.1.0](https://img.shields.io/badge/Version-1.1.0-informational?style=flat-square) ![Type: library](https://img.shields.io/badge/Type-library-informational?style=flat-square) ![AppVersion: 1.1.0](https://img.shields.io/badge/AppVersion-1.1.0-informational?style=flat-square)
 
 Helm tpl library for helm chart
 
@@ -20,7 +20,7 @@ versions use the same repository.
 ```yaml
 dependencies:
   - name: tpl-library
-    version: 1.0.0
+    version: 1.1.0
     repository: oci://registry-1.docker.io/grootantech
 ```
 
@@ -43,7 +43,7 @@ maintainers:
     email: devops@contoso.com
 dependencies:
   - name: tpl-library
-    version: 1.0.0
+    version: 1.1.0
     repository: oci://registry.contoso.com/helm
 icon: `app-logo`
 appVersion: `app-version`

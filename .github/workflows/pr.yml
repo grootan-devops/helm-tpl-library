@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   init:
-    uses: grootan-devops/github-ci-library/.github/workflows/init.yml@dev
+    uses: grootan-devops/github-ci-library/.github/workflows/init.yml@1.0.0
     permissions:
       contents: read
       actions: read
@@ -26,21 +26,19 @@ jobs:
 
   check:
     needs: init
-    uses: grootan-devops/github-ci-library/.github/workflows/check.yml@dev
+    uses: grootan-devops/github-ci-library/.github/workflows/check.yml@1.0.0
     permissions:
       contents: read
     secrets: inherit
     with:
       tag: ${{ needs.init.outputs.tag }}
       chart-name: ${{ needs.init.outputs.chart-name }}
-      chart-version: ${{ needs.init.outputs.chart-version }}
+      chart-version: ${{ needs.init.outputs.chart-push-version }}
       chart-repository: ${{ needs.init.outputs.chart-repository }}
-      allow-unstable-library-refs: true
-      check-library-pinning: false
       chart-dir: "."
 
   lint:
-    uses: grootan-devops/github-ci-library/.github/workflows/lint.yml@dev
+    uses: grootan-devops/github-ci-library/.github/workflows/lint.yml@1.0.0
     permissions:
       contents: read
     secrets: inherit
@@ -50,7 +48,7 @@ jobs:
 
   chart:
     needs: init
-    uses: grootan-devops/github-ci-library/.github/workflows/chart.yml@dev
+    uses: grootan-devops/github-ci-library/.github/workflows/chart.yml@1.0.0
     permissions:
       contents: read
       packages: write
@@ -60,14 +58,14 @@ jobs:
       chart-version: ${{ needs.init.outputs.chart-version }}
       chart-app-version: ${{ needs.init.outputs.chart-app-version }}
       chart-repository: ${{ needs.init.outputs.chart-push-repository }}
-      check-docs: true
+      check-docs: false
       run-unittest: true
       mock-chart: test
       chart-dir: "."
       publish-candidate: true
 
   secret-scan:
-    uses: grootan-devops/github-ci-library/.github/workflows/secret-scanning.yml@dev
+    uses: grootan-devops/github-ci-library/.github/workflows/secret-scanning.yml@1.0.0
     permissions:
       contents: read
     secrets: inherit

@@ -7,6 +7,13 @@ this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-09-23
+
+### Changed
+
+- Split chart guidance into focused topic guides and a separately generated values reference.
+- Keep the README as a task index and add deterministic documentation generation and drift checks.
+
 ## [1.1.0] - 2026-09-22
 
 ### Changed

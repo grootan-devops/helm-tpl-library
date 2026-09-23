@@ -11,6 +11,11 @@ Helm tpl library for helm chart
 Use `tpl-library` as a dependency of an application chart; it is not installed directly.
 Follow the [usage guide](docs/usage.md) for registry authentication and setup.
 
+```console
+# Login to OCI Registry
+helm registry login registry-1.docker.io --username <registry-username> --password <registry-token>
+```
+
 ```yaml
 dependencies:
   - name: tpl-library

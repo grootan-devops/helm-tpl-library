@@ -10,15 +10,10 @@ name: example-backend
 version: 1.0.0
 description: Application purpose and responsibilities
 type: application
-home: https://example.com
-maintainers:
-  - name: DevOps
-    email: devops@contoso.com
 dependencies:
   - name: tpl-library
     version: 1.2.0
-    repository: oci://registry.contoso.com/helm
-icon: https://example.com/logo.svg
+    repository: oci://registry-1.docker.io/grootantech
 appVersion: "1.0.0"
 deprecated: false
 ```

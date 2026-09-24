@@ -7,6 +7,11 @@ this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- Rename the mock consumer chart directory from `test/` to `tests/`, update CI and guide
+  references, and select its nested unit-test suite explicitly.
+
 ## [1.2.0] - 2026-09-23
 
 ### Changed

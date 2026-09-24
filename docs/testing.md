@@ -1,33 +1,37 @@
 # Testing
 
-`tpl-library` is a library chart, so it cannot be rendered on its own. `test` is a
+`tpl-library` is a library chart, so it cannot be rendered on its own. `tests` is a
 mock consumer chart that depends on this library through `file://..` and calls every
 `tpl.*` entrypoint; [helm-unittest](https://github.com/helm-unittest/helm-unittest) then
 asserts the rendered output for both the default values and each override scenario.
 
 ```console
-make test     # helm dependency update + helm unittest test
+make test     # helm dependency update + helm unittest --file tests/tests/*_test.yaml tests
 make lint     # strict Helm lint of the mock chart
 make template # render the mock chart and check for errors
 make verify   # documentation drift, lint, rendering and unit tests
-helm template contoso test -f test/values/full.yaml # inspect a full render
+helm template contoso tests -f tests/values/full.yaml # inspect a full render
 ```
 
-- `test/values/` is the scenario matrix: `full.yaml` is a verbatim copy of
+- `tests/values/` is the scenario matrix: `full.yaml` is a verbatim copy of
   `example.yaml`, and the rest are focused override layers (routes, mounts, env
   precedence, sibling references, autoscaling, job/cronjob, naming edges).
-- `test/tests/` holds one suite per library template, each pairing a default
+- `tests/tests/` holds one suite per library template, each pairing a default
   case with an override case.
-- `test/tests/e2e_full_test.yaml` snapshots the whole render for the defaults and for
+- The chart itself lives in `tests/`, so its suite glob is `tests/tests/*_test.yaml` from
+  the repository root. Keep that explicit glob in local and CI commands; the default glob
+  would search the wrong level. `.helmignore` excludes the suites from packaging.
+- `tests/tests/e2e_full_test.yaml` snapshots the whole render for the defaults and for
   `example.yaml`, one snapshot per entrypoint template, committed under
-  `test/tests/__snapshot__/`. After an intentional template change run `helm unittest --update-snapshot test` and
+  `tests/tests/__snapshot__/`. After an intentional template change run
+  `helm unittest --file 'tests/tests/*_test.yaml' --update-snapshot tests` and
   review the snapshot diff.
-- `test/tests/known_defects_test.yaml` pins behaviour that is currently wrong, with the fix
+- `tests/tests/known_defects_test.yaml` pins behaviour that is currently wrong, with the fix
   noted inline. Those cases turn red on purpose once a bug is fixed — convert them into
   passing cases then.
 
-Whenever `values.yaml` or `example.yaml` changes, refresh `test/values.yaml`
-(the baseline copy of `values.yaml`) and `test/values/full.yaml` (the copy of
+Whenever `values.yaml` or `example.yaml` changes, refresh `tests/values.yaml`
+(the baseline copy of `values.yaml`) and `tests/values/full.yaml` (the copy of
 `example.yaml`) alongside it.
 
 ## Testing a consumer chart — what to cover, and what not to
@@ -53,7 +57,7 @@ them.
 | **Sibling references** resolve to the services this chart actually talks to | `tpl.resource.siblingName` is tested here; that your `cart.internalUrl` points at the cart service is not |
 | **Schema** — `values.schema.json` rejects the mistakes this chart's values invite | The shape is the chart's own |
 
-A useful shape is one scenario file per decision the chart makes, mirroring `test/values/`
+A useful shape is one scenario file per decision the chart makes, mirroring `tests/values/`
 above: defaults, then one override layer per behaviour, each asserting only the keys that
 layer changes.
 

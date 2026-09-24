@@ -15,15 +15,15 @@ docs-check:
 	done
 
 dependency:
-	helm dependency update test
+	helm dependency update tests
 
 lint: dependency
-	helm lint --strict test
+	helm lint --strict tests
 
 template: dependency
-	helm template contoso test >/dev/null
+	helm template contoso tests >/dev/null
 
 test: dependency
-	helm unittest --strict test
+	helm unittest --strict --file 'tests/tests/*_test.yaml' tests
 
 verify: docs-check lint template test

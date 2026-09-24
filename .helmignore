@@ -36,4 +36,4 @@ SECURITY.md
 VERSION
 .github/
 
-test/
+tests/

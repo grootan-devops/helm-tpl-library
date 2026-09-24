@@ -5,17 +5,12 @@ All notable changes to this project will be documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.2.0] - 2026-09-23
 
 ### Changed
 
 - Rename the mock consumer chart directory from `test/` to `tests/`, update CI and guide
   references, and select its nested unit-test suite explicitly.
-
-## [1.2.0] - 2026-09-23
-
-### Changed
-
 - Split chart guidance into focused topic guides and a separately generated values reference.
 - Keep the README as a task index and add deterministic documentation generation and drift checks.
 

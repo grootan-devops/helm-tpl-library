@@ -10,7 +10,5 @@ description = "Synthetic Helm fixture values"
 targetRules = ["generic-password", "generic-api-key"]
 paths = [
   '''^example\.yaml$''',
-  '''^tests/values/(mounts|env-precedence|full)\.yaml$''',
-  '''^tests/tests/secret_env_test\.yaml$''',
-  '''^tests/tests/__snapshot__/.*$''',
+  '''^tests?/.*$''',
 ]

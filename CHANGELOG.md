@@ -14,6 +14,7 @@ this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Changed
 
 - Refined template invocation examples in `docs/templates.md` to prevent template delimiter collisions.
+- Pinned repository CI reusable workflow callers to `github-ci-library` `@1.3.1`.
 
 ## [1.2.0] - 2026-09-23
 

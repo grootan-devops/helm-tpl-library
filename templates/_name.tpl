@@ -99,3 +99,35 @@ Create resorce name for token.
 {{- end -}}
 {{- .out -}}
 {{- end -}}
+
+{{- define "tpl.container.image.repository" -}}
+{{- $explicit := "" -}}
+{{- if and (._container).image (._container).image.repository -}}
+  {{- $explicit = (._container).image.repository -}}
+{{- end -}}
+{{- if $explicit -}}
+  {{- tpl $explicit $ -}}
+{{- else -}}
+  {{- $partOf := "" -}}
+  {{- if $.Values.partOf -}}
+    {{- $partOf = $.Values.partOf -}}
+  {{- else if and $.Values.global $.Values.global.partOf -}}
+    {{- $partOf = $.Values.global.partOf -}}
+  {{- end -}}
+  {{- $comp := $.Values.component | default "" -}}
+  {{- $sub := $.Values.subComponent | default ($.Values.subcomponent | default "") -}}
+  {{- $path := $comp -}}
+  {{- if and $comp $sub -}}
+    {{- $path = printf "%s/%s" $comp $sub -}}
+  {{- else if $sub -}}
+    {{- $path = $sub -}}
+  {{- end -}}
+  {{- if and $partOf $path -}}
+    {{- printf "%s/%s" $partOf $path -}}
+  {{- else if $path -}}
+    {{- $path -}}
+  {{- else -}}
+    {{- $.Chart.Name -}}
+  {{- end -}}
+{{- end -}}
+{{- end -}}

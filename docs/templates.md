@@ -29,26 +29,66 @@ too long to fit that budget fails the render rather than producing a truncated n
 `jobs.<job>.containers` key. It does **not** apply to `cronjobs:`, which reuse the root
 `containers:` and therefore run `main` in their pod by design.
 
+## Container Image Repository Auto-Resolution
+
+When `(._container).image.repository` is omitted or empty `""`, `tpl-library` auto-computes the repository path via `tpl.container.image.repository`:
+- **Format with subcomponent**: `<partOf>/<component>/<subcomponent>`
+- **Format without subcomponent**: `<partOf>/<component>`
+- **When `partOf` is omitted**: `<component>/<subcomponent>` (or `<component>`)
+- Resolves `partOf` from `.Values.partOf` or `.Values.global.partOf`. Supports both `.Values.subComponent` and `.Values.subcomponent`.
+- Explicit `repository` values remain evaluated as templates: `(tpl (._container).image.repository $)`.
+
 ## Template Invocation Standards (`templates/manifest.yaml`)
 
-Use the below `tpl.*` template functions from `tpl-library` to generate Kubernetes resources:
+By default, a stateless application chart needs only the core deployment umbrella in `templates/manifest.yaml`:
 
 ```gotmpl
-{{- include "tpl.servicemonitor" . }}
----
+{{/* Core workload umbrella: Deployment, Service, Routes, PDB, SA, HPA, NetworkPolicy */}}
 {{- include "tpl.deployment" . }}
----
-{{- include "tpl.job" (merge (dict "_container" .Values.job "serviceSuffix" "job") .) }}
----
-{{- include "tpl.cronjob" (merge (dict "_container" .Values.cronjob "serviceSuffix" "cronjob") .) }}
----
-{{- include "tpl.pvc" . }}
 ```
 
-`tpl.servicemonitor`, `tpl.job`, `tpl.cronjob` and `tpl.pvc` are **optional** — include
-only the ones the chart needs. `tpl.deployment` is the one that renders the workload and
-everything the pod references (Service, routes, ServiceAccount, PDB, NetworkPolicy, HPA,
-ConfigMaps and Secrets).
+`tpl.deployment` renders the workload and everything the pod references (Service, routes, ServiceAccount, PDB, NetworkPolicy, HPA, ConfigMaps and Secrets).
+
+### Optional Resource Invocations
+
+Optional capabilities (`persistence`, `cronjobs`, `jobs`, `metrics`) should **not** be included in `values.yaml` or `manifest.yaml` by default. When an application workload requires them, append the corresponding block below:
+
+#### Prometheus Metrics (`tpl.servicemonitor` / `tpl.podmonitor`)
+When scraping endpoints are configured under `metrics:` and `global.metrics.enabled` is `true`:
+
+```gotmpl
+---
+{{ include "tpl.servicemonitor" . }}
+```
+*(Or use `{{ include "tpl.podmonitor" . }}` if scraping pods directly instead of Services.)*
+
+#### Persistent Storage (`tpl.pvc`)
+`tpl.pvc` emits its own document separator `---` for each enabled claim. When persistent storage is required:
+
+```gotmpl
+{{ include "tpl.pvc" . }}
+```
+
+#### Batch Jobs (`tpl.job`)
+When one-off or hook batch jobs are defined under `jobs:` in `values.yaml`:
+
+```gotmpl
+{{- range $name, $job := .Values.jobs }}
+---
+{{- include "tpl.job" (merge (dict "_container" $job "serviceSuffix" $name) $) }}
+{{- end }}
+```
+
+#### Recurring CronJobs (`tpl.cronjob`)
+When scheduled tasks are defined under `cronjobs:` in `values.yaml`:
+
+```gotmpl
+{{- range $name, $cj := .Values.cronjobs }}
+---
+{{- include "tpl.cronjob" (merge (dict "_container" $cj "name" $name) $) }}
+{{- end }}
+```
+
 
 ## Cross-Service Sibling Resource Naming (`tpl.resource.siblingName`)
 

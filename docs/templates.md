@@ -95,7 +95,6 @@ When scheduled tasks are defined under `cronjobs:` in `values.yaml`:
 {{- end }}
 ```
 
-
 ## Cross-Service Sibling Resource Naming (`tpl.resource.siblingName`)
 
 In microservices architectures deployed under a shared product or release prefix (e.g. `myapp-order-backend`), services frequently need to reference sibling Kubernetes resources (e.g. `myapp-cart-backend`, `myapp-redis`, `myapp-auth-svc`).

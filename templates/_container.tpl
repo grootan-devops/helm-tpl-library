@@ -17,7 +17,7 @@
   {{- if (._container).args }}
   args: {{- tpl (toYaml (._container).args) $ | nindent 4 }}
   {{- end }}
-  image: {{ printf "%s/%s:%s" ((._container).image.registry | default .Values.global.image.registry ) (tpl (._container).image.repository $) ((._container).image.tag | default .Chart.AppVersion) | quote }}
+  image: {{ printf "%s/%s:%s" ((._container).image.registry | default .Values.global.image.registry ) (include "tpl.container.image.repository" $) ((._container).image.tag | default .Chart.AppVersion) | quote }}
   imagePullPolicy: {{ .Values.global.image.pullPolicy }}
   {{- if (._container).env }}
   env: {{- (._container).env | toYaml | nindent 4 }}

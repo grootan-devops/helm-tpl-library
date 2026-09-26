@@ -227,3 +227,47 @@ tests:
         documentSelector:
           path: kind
           value: Deployment
+
+  - it: auto-computes repository from partOf, component, and subComponent when repository is empty
+    set:
+      global.partOf: "acme"
+      component: "catalog"
+      subComponent: "api"
+      containers.main.image.repository: ""
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "cr.io/acme/catalog/api:1.4.2"
+        documentSelector:
+          path: kind
+          value: Deployment
+
+  - it: auto-computes repository from partOf and component without subComponent
+    set:
+      global.partOf: "acme"
+      component: "catalog"
+      subComponent: ""
+      containers.main.image.repository: ""
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "cr.io/acme/catalog:1.4.2"
+        documentSelector:
+          path: kind
+          value: Deployment
+
+  - it: auto-computes repository without partOf as component/subComponent
+    set:
+      global.partOf: ""
+      partOf: ""
+      component: "catalog"
+      subComponent: "api"
+      containers.main.image.repository: ""
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "cr.io/catalog/api:1.4.2"
+        documentSelector:
+          path: kind
+          value: Deployment
+

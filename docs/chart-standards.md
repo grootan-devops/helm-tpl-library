@@ -12,7 +12,7 @@ description: Application purpose and responsibilities
 type: application
 dependencies:
   - name: tpl-library
-    version: 1.2.0
+    version: 1.3.0
     repository: oci://registry-1.docker.io/grootantech
 appVersion: "1.0.0"
 deprecated: false

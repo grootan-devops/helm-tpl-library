@@ -32,6 +32,7 @@ too long to fit that budget fails the render rather than producing a truncated n
 ## Container Image Repository Auto-Resolution
 
 When `(._container).image.repository` is omitted or empty `""`, `tpl-library` auto-computes the repository path via `tpl.container.image.repository`:
+
 - **Format with subcomponent**: `<partOf>/<component>/<subcomponent>`
 - **Format without subcomponent**: `<partOf>/<component>`
 - **When `partOf` is omitted**: `<component>/<subcomponent>` (or `<component>`)
@@ -54,15 +55,18 @@ By default, a stateless application chart needs only the core deployment umbrell
 Optional capabilities (`persistence`, `cronjobs`, `jobs`, `metrics`) should **not** be included in `values.yaml` or `manifest.yaml` by default. When an application workload requires them, append the corresponding block below:
 
 #### Prometheus Metrics (`tpl.servicemonitor` / `tpl.podmonitor`)
+
 When scraping endpoints are configured under `metrics:` and `global.metrics.enabled` is `true`:
 
 ```gotmpl
 ---
 {{ include "tpl.servicemonitor" . }}
 ```
+
 *(Or use `{{ include "tpl.podmonitor" . }}` if scraping pods directly instead of Services.)*
 
 #### Persistent Storage (`tpl.pvc`)
+
 `tpl.pvc` emits its own document separator `---` for each enabled claim. When persistent storage is required:
 
 ```gotmpl
@@ -70,6 +74,7 @@ When scraping endpoints are configured under `metrics:` and `global.metrics.enab
 ```
 
 #### Batch Jobs (`tpl.job`)
+
 When one-off or hook batch jobs are defined under `jobs:` in `values.yaml`:
 
 ```gotmpl
@@ -80,6 +85,7 @@ When one-off or hook batch jobs are defined under `jobs:` in `values.yaml`:
 ```
 
 #### Recurring CronJobs (`tpl.cronjob`)
+
 When scheduled tasks are defined under `cronjobs:` in `values.yaml`:
 
 ```gotmpl

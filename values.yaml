@@ -379,8 +379,10 @@ jobs: {}
 #         image:
 #           repository: "acme/migrator"
 #           tag: "0.9.0"
-#         command: ["/bin/sh"]
-#         args: ["-c", "migrate up"]
+#         # The image's start script runs the task MODE names; command and args stay empty.
+#         env:
+#           - name: MODE
+#             value: migrate
 #     initContainers:
 #       wait-for-db:
 #         image:

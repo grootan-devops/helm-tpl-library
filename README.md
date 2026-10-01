@@ -2,7 +2,7 @@
 
 [Compatibility](https://github.com/grootan-devops/ai-skills/blob/main/COMPATIBILITY.md) · [Security](./SECURITY.md) · [Reporting policy](./CONTRIBUTING.md)
 
-![Version: 1.3.0](https://img.shields.io/badge/Version-1.3.0-informational?style=flat-square) ![Type: library](https://img.shields.io/badge/Type-library-informational?style=flat-square) ![AppVersion: 1.3.0](https://img.shields.io/badge/AppVersion-1.3.0-informational?style=flat-square)
+![Version: 1.4.0](https://img.shields.io/badge/Version-1.4.0-informational?style=flat-square) ![Type: library](https://img.shields.io/badge/Type-library-informational?style=flat-square) ![AppVersion: 1.4.0](https://img.shields.io/badge/AppVersion-1.4.0-informational?style=flat-square)
 
 Helm tpl library for helm chart
 
@@ -14,7 +14,7 @@ Follow the [usage guide](docs/usage.md) for registry authentication and setup.
 ```yaml
 dependencies:
   - name: tpl-library
-    version: 1.3.0
+    version: 1.4.0
     repository: oci://registry-1.docker.io/grootantech
 ```
 
@@ -23,9 +23,9 @@ dependencies:
 | Task | Read |
 | --- | --- |
 | Add the library dependency and authenticate | [Usage](docs/usage.md) |
-| Structure a consumer chart and document its values | [Chart standards](docs/chart-standards.md) |
-| Select template entrypoints and derive resource names | [Templates and naming](docs/templates.md) |
-| Configure mounts, persistent storage, secrets and schema | [Configuration and storage](docs/configuration.md) |
+| Structure a consumer chart: description, README, values, probes, ignore files, several releases, renames | [Chart standards](docs/chart-standards.md) |
+| Name a chart and its containers, select template entrypoints and derive resource names | [Templates and naming](docs/templates.md) |
+| Configure mounts and file mounts, routes, storage, secrets, schema and security posture | [Configuration and storage](docs/configuration.md) |
 | Look up a value, its type or default | [Generated values reference](docs/values/README.md) |
 | Test this library or a consumer chart | [Testing](docs/testing.md) |
 | Upgrade an existing consumer | [Migration guide](MIGRATION.md) · [Changelog](CHANGELOG.md) |

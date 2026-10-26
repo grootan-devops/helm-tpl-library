@@ -15,6 +15,7 @@ this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- CI calls the github-ci-library 1.7.0 reusable workflows instead of 1.3.1.
 - The README drops its link to the ai-skills compatibility page: this library documents its own versioning. Its AI reading notes are a section that says which release to read and names the chart contract.
 - The Helm requirement is `>=3.8.0`, the first release that resolves `oci://` dependencies; `>=3.2.0` could not install the documented dependency.
 - Example dependency pins in `docs/usage.md` and `docs/chart-standards.md` are `<version>` instead of a release that every release had to edit.

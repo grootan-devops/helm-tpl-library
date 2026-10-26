@@ -7,6 +7,22 @@ To upgrade, apply every section after your pinned version up to the target, olde
 Newer sections are split into **Required** (the upgrade breaks or misbehaves without it),
 **Recommended** (aligns an existing chart with the current standards) and **Verify**.
 
+## 1.5.0
+
+### Required
+
+No migration required. The templates and the values contract are unchanged.
+
+### Recommended
+
+- A consumer chart's `.helmignore` lists `tests/` instead of `test/`, so its helm-unittest
+  suites stay out of the packaged chart.
+- Pin a release, never a `<version>-<run>.<pr>` candidate.
+
+### Verify
+
+- `helm lint --strict` and `helm template` pass on `values.yaml` and on each overlay.
+
 ## 1.4.0
 
 ### Required

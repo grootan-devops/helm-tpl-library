@@ -12,7 +12,7 @@ description: Application purpose and responsibilities
 type: application
 dependencies:
   - name: tpl-library
-    version: 1.4.0
+    version: <version>
     repository: oci://registry-1.docker.io/grootantech
 appVersion: "1.0.0"
 deprecated: false
@@ -131,7 +131,7 @@ apps:
   ```
 
 - **Complex Objects & `toYaml` Rendering (`# @default -- Check values.yaml`)**:
-  For complex structures (`securityContext`, `resources`, `probes`, `strategy`) rendered via `toYaml` in `tpl-library`, annotate with `# @default -- Check values.yaml` to prevent ugly, multi-line table distortion in generated documentation:
+  For complex structures rendered via `toYaml` in `tpl-library` — `strategy`, the container `securityContext` and `pod.securityContext` in the library's `values.yaml` — annotate with `# @default -- Check values.yaml` to prevent ugly, multi-line table distortion in generated documentation:
 
   ```yaml
       # -- Security context for the container (Standard Non-Root).
@@ -139,11 +139,6 @@ apps:
       # @section -- Container Settings
       # @default -- Check values.yaml
       securityContext:
-        runAsUser: 10001
-        runAsGroup: 10001
-        runAsNonRoot: true
-        seccompProfile:
-          type: RuntimeDefault
         privileged: false
         allowPrivilegeEscalation: false
         readOnlyRootFilesystem: false
@@ -221,11 +216,6 @@ apps:
       # @section -- Container Settings
       # @default -- Check values.yaml
       securityContext:
-        runAsUser: 10001
-        runAsGroup: 10001
-        runAsNonRoot: true
-        seccompProfile:
-          type: RuntimeDefault
         privileged: false
         allowPrivilegeEscalation: false
         readOnlyRootFilesystem: false
@@ -234,6 +224,9 @@ apps:
             - ALL
   ```
 
+- **The non-root identity is pod-level.** `pod.securityContext` sets `runAsUser`, `runAsGroup`
+  and `fsGroup` to `10001`, `runAsNonRoot` and the `RuntimeDefault` seccomp profile, as the
+  library's `values.yaml` does; the container block only drops privileges.
 - **`command` and `args` stay `[]` for the chart's own image** — in `containers`, in job
   containers and in every overlay. `command` replaces the image ENTRYPOINT, so its init no
   longer runs as PID 1, and `args` replaces its CMD. A job picks its task through the image,
@@ -316,7 +309,7 @@ Makefile
 SECURITY.md
 VERSION
 
-test/
+tests/
 ```
 
 To confirm a loader problem, untar `charts/<dependency>.tgz` in place and lint again: if the

@@ -145,7 +145,6 @@ Run `make docs` after changing values or their descriptions.
 |-----|------|---------|-------------|
 | jobs | object | `{}` |  |
 | cronjobs | object | `{}` |  |
-| service.default | object | `{"annotations":{},"spec":{"ports":[],"type":"ClusterIP"}}` | Default service definition. |
 | persistence | object | `{}` |  |
 
 [Configuration and storage](../configuration.md) · [Documentation index](../../README.md)

@@ -286,8 +286,8 @@ containers:
       # Ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
       # @section -- Container Settings
       liveness: {}
-      ## liveness
-      # readiness:
+      ### Example
+      # liveness:
       #   httpGet:
       #     path: /health
       #     port: 8080
@@ -415,7 +415,6 @@ scheduling:
 # ==============================================================================
 
 service:
-  # -- Default service definition.
   default:
     # -- Service annotations.
     # @section -- Networking Settings

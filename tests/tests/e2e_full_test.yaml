@@ -63,7 +63,7 @@ tests:
         documentSelector:
           path: kind
           value: HTTPRoute
-      # release "rel" with global.releaseNameLength 20 is shorter than the limit.
+      # release "rel" with global.releaseNameLength 14 is shorter than the limit.
       - equal:
           path: metadata.name
           value: rel-admin-backend

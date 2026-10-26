@@ -21,11 +21,12 @@ helm template contoso tests -f tests/values/full.yaml # inspect a full render
 - The chart itself lives in `tests/`, so its suite glob is `tests/tests/*_test.yaml` from
   the repository root. Keep that explicit glob in local and CI commands; the default glob
   would search the wrong level. `.helmignore` excludes the suites from packaging.
-- `tests/tests/e2e_full_test.yaml` snapshots the whole render for the defaults and for
-  `example.yaml`, one snapshot per entrypoint template, committed under
-  `tests/tests/__snapshot__/`. After an intentional template change run
-  `helm unittest --file 'tests/tests/*_test.yaml' --update-snapshot tests` and
-  review the snapshot diff.
+- `tests/tests/e2e_full_test.yaml` renders the whole chart for the defaults and for
+  `example.yaml`, one snapshot per entrypoint template. The snapshots under
+  `tests/tests/__snapshot__/` are not committed (`.gitignore` excludes them), so each run
+  writes fresh ones: the suite proves the full render succeeds and asserts the named fields,
+  not that the output is unchanged. To review a template change, compare
+  `helm template contoso tests -f tests/values/full.yaml` before and after it.
 - `tests/tests/known_defects_test.yaml` pins behaviour that is currently wrong, with the fix
   noted inline. Those cases turn red on purpose once a bug is fixed — convert them into
   passing cases then.

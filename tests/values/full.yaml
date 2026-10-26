@@ -3,7 +3,7 @@
 # ==============================================================================
 
 global:
-  releaseNameLength: 20
+  releaseNameLength: 14
 
   image:
     registry: "docker.io"
@@ -78,7 +78,7 @@ initContainers:
 
 containers:
   main:
-    name: "app-server" # Explicit override or use {{ incude "tpl.component.name" $ }} (optional)
+    name: "app-server" # Explicit override or use {{ include "tpl.component.name" $ }} (optional)
     image:
       repository: "nginx"
       tag: "alpine"

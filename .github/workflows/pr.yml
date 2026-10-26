@@ -55,7 +55,7 @@ jobs:
     secrets: inherit
     with:
       chart-name: ${{ needs.init.outputs.chart-name }}
-      chart-version: ${{ needs.init.outputs.chart-version }}
+      chart-version: ${{ needs.init.outputs.chart-push-version }}
       chart-app-version: ${{ needs.init.outputs.chart-app-version }}
       chart-repository: ${{ needs.init.outputs.chart-push-repository }}
       check-docs: false

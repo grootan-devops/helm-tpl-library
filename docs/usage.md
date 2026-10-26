@@ -3,12 +3,12 @@
 On Docker Hub, the push target is the Grootan namespace root. Helm appends the
 chart name, so `tpl-library` is published at
 `oci://registry-1.docker.io/grootantech/tpl-library`; candidate and release
-versions use the same repository.
+versions use the same repository, so pin a release tag, never a candidate.
 
 ```yaml
 dependencies:
   - name: tpl-library
-    version: 1.4.0
+    version: <version>
     repository: oci://registry-1.docker.io/grootantech
 ```
 

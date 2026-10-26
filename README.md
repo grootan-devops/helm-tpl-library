@@ -1,8 +1,8 @@
 # Helm tpl Library
 
-[Compatibility](https://github.com/grootan-devops/ai-skills/blob/main/COMPATIBILITY.md) · [Security](./SECURITY.md) · [Reporting policy](./CONTRIBUTING.md)
+[Security](./SECURITY.md) · [Reporting policy](./CONTRIBUTING.md)
 
-![Version: 1.4.0](https://img.shields.io/badge/Version-1.4.0-informational?style=flat-square) ![Type: library](https://img.shields.io/badge/Type-library-informational?style=flat-square) ![AppVersion: 1.4.0](https://img.shields.io/badge/AppVersion-1.4.0-informational?style=flat-square)
+![Version: 1.5.0](https://img.shields.io/badge/Version-1.5.0-informational?style=flat-square) ![Type: library](https://img.shields.io/badge/Type-library-informational?style=flat-square) ![AppVersion: 1.5.0](https://img.shields.io/badge/AppVersion-1.5.0-informational?style=flat-square)
 
 Helm tpl library for helm chart
 
@@ -14,7 +14,7 @@ Follow the [usage guide](docs/usage.md) for registry authentication and setup.
 ```yaml
 dependencies:
   - name: tpl-library
-    version: 1.4.0
+    version: 1.5.0
     repository: oci://registry-1.docker.io/grootantech
 ```
 
@@ -29,19 +29,31 @@ dependencies:
 | Look up a value, its type or default | [Generated values reference](docs/values/README.md) |
 | Test this library or a consumer chart | [Testing](docs/testing.md) |
 | Upgrade an existing consumer | [Migration guide](MIGRATION.md) · [Changelog](CHANGELOG.md) |
+| Maintain this library and follow release conventions | [Maintainer guide](docs/maintainer-guide.md) |
 
-For AI-assisted work, read this index first and follow only the relevant topic links.
-Resolve links against the same branch, tag or local checkout; do not load all guides by default.
+## Reading with an AI assistant
+
+Start here, select the relevant task, and follow only the linked pages needed for it.
+Resolve relative links from the containing document and keep every page on the same
+branch, tag, commit or local checkout, including uncommitted edits. Do not concatenate `docs/`.
+Read the release a chart's `tpl-library` dependency pins, or the latest release tag for a new
+chart; example pins such as `<version>` show syntax only.
+Generate values from the resolved source and verify that it supports the feature being used.
+For upgrades, also read [MIGRATION.md](MIGRATION.md) and [CHANGELOG.md](CHANGELOG.md).
+Audit tools read the consumer-chart rules from [docs/chart-contract.json](docs/chart-contract.json)
+at that same ref.
 
 ## Requirements
 
-- Helm: `>=3.2.0`
-- Kubernetes: `>=1.27`
+Kubernetes: `>=1.27.0-0`
+
+Helm: `>=3.8.0`, the first release that resolves `oci://` dependencies
 
 ## Maintaining documentation
 
 Edit the topic guides directly. Edit `README.gotmpl`, `docs/values/README.gotmpl`
 and `values.yaml` for generated content, then run `make docs` and `make docs-check`.
+Releases, versioning and the chart contract are in the [maintainer guide](docs/maintainer-guide.md).
 
 ## License
 

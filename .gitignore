@@ -8,7 +8,6 @@
 charts/
 Chart.lock
 
-# Resolved file:// dependency of the render test fixture — rebuilt by `make deps`.
-test/charts/
-test/Chart.lock
+# helm-unittest snapshots are written on every run; `charts/` and `Chart.lock` above cover the
+# render fixture's resolved file:// dependency, rebuilt by `make dependency`.
 __snapshot__

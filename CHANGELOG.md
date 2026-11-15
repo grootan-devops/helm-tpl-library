@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] - 2026-11-15
+
+### Added
+
+- East-West Istio Service Mesh support via `serviceMesh:`:
+  - Ambient mode waypoint routing (`serviceMesh.waypoint`) attaching `istio.io/use-waypoint` to Service and/or Pod metadata.
+  - Dedicated `pod.labels` support in `values.yaml` and `_deployment.tpl` for arbitrary workload label customisation.
+  - Zero-Trust security resources: `PeerAuthentication` (mTLS mode with per-port exceptions), `RequestAuthentication` (JWT token validation), and `AuthorizationPolicy` (L4 SPIFFE and L7 RBAC/claims enforcement).
+  - Mesh egress and resilience resources: `externalServices` (one-step external API registration with automatic HTTP-to-HTTPS TLS origination, `BackendTLSPolicy`, and `DestinationRule`), and `DestinationRule` (load balancing, circuit breaking, connection pools).
+- KEDA (Kubernetes Event-Driven Autoscaling) support on top of autoscaling:
+  - `ScaledObject` rendering via `tpl.keda.scaledobject` and `tpl.keda`, supporting all 60+ KEDA scalers and reusing common `autoscaling` configurations (`minReplicas`, `maxReplicas`, `scaleUp`/`scaleDown` behaviors).
+  - `TriggerAuthentication` rendering via `tpl.keda.triggerauthentication` with support for referencing existing Secrets, generating inline Secrets via `secret.create: true`, and referencing external `ClusterTriggerAuthentication` resources.
+  - Integration with `tpl.deployment` to automatically render KEDA resources and suppress native `HorizontalPodAutoscaler` (`tpl.hpa`) when `autoscaling.keda.enabled` is `true`.
+  - Scale-to-zero support by permitting `minReplicas: 0` in `values.schema.json`.
+
 ## [1.5.0] - 2026-10-27
 
 ### Added

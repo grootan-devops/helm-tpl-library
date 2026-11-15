@@ -55,6 +55,7 @@ Run `make docs` after changing values or their descriptions.
 | serviceAccount.annotations | object | `{}` | ServiceAccount annotations. |
 | hostAliases | list | `[]` | HostAliases to inject into /etc/hosts. Ref: https://kubernetes.io/docs/tasks/network/customize-hosts-file-for-pods/ |
 | pod.annotations | object | `{}` | Annotations to add to the Pod metadata. |
+| pod.labels | object | `{}` | Additional labels to add to the Pod metadata. |
 | pod.securityContext | object | Check values.yaml | Pod-level Security Context (applied to all containers). Ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/ |
 
 ### Container Settings
@@ -113,6 +114,16 @@ Run `make docs` after changing values or their descriptions.
 | networkPolicy.enabled | bool | `false` | Enable NetworkPolicy. Ref: https://kubernetes.io/docs/concepts/services-networking/network-policies/ |
 | networkPolicy.ingressRule | list | `[]` | Ingress network rules. |
 | networkPolicy.egressRule | list | `[]` | Egress network rules. |
+| serviceMesh.enabled | bool | `false` | Enable Service Mesh resources for East-West traffic. |
+| serviceMesh.type | string | `"istio"` | Mesh provider. Currently supports 'istio'. |
+| serviceMesh.istio.waypoint.enabled | bool | `false` | Enable automatic waypoint label attachment to Service. |
+| serviceMesh.istio.waypoint.name | string | `"shared-waypoint"` | Name of the Waypoint gateway (e.g. 'shared-waypoint'). |
+| serviceMesh.istio.waypoint.namespace | string | `"istio-system"` | Namespace where the Waypoint gateway lives (e.g. 'istio-system'). |
+| serviceMesh.istio.peerAuthentication | object | `{}` | PeerAuthentication specification (inbound mTLS mode and port exceptions). Ref: https://istio.io/latest/docs/reference/config/security/peer_authentication/ |
+| serviceMesh.istio.requestAuthentications | list | `[]` | RequestAuthentication specifications (validating JWT tokens). Ref: https://istio.io/latest/docs/reference/config/security/request-authentication/ |
+| serviceMesh.istio.authorizationPolicies | list | `[]` | AuthorizationPolicy specifications (L4 identity and L7 RBAC/claims). Ref: https://istio.io/latest/docs/reference/config/security/authorization-policy/ |
+| serviceMesh.istio.destinationRules | list | `[]` | DestinationRule specifications (client traffic policy, circuit breaking, subsets). Ref: https://istio.io/latest/docs/reference/config/networking/destination-rule/ |
+| serviceMesh.istio.externalServices | list | `[]` | External services shorthand. Automatically creates ServiceEntry (MESH_EXTERNAL/DNS), BackendTLSPolicy (System CA validation), and DestinationRule (SIMPLE TLS origination from port 80 to 443). Ref: https://istio.io/latest/docs/tasks/traffic-management/egress/egress-tls-origination/ |
 
 ### Storage Settings
 
@@ -130,12 +141,21 @@ Run `make docs` after changing values or their descriptions.
 | pdb.enabled | bool | `false` | Enable PodDisruptionBudget. Ref: https://kubernetes.io/docs/tasks/run-application/configure-pdb/ |
 | pdb.minAvailable | string | `""` | Minimum available pods. |
 | pdb.maxUnavailable | int | `2` | Maximum unavailable pods. |
-| autoscaling.enabled | bool | `false` | Enable HPA. Ref: https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/ |
-| autoscaling.minReplicas | int | `1` | Minimum pod replicas. |
+| autoscaling.enabled | bool | `false` | Enable autoscaling. When autoscaling.keda.enabled is false, renders standard Kubernetes HPA. When true, renders KEDA ScaledObject. Ref: https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/ |
+| autoscaling.minReplicas | int | `1` | Minimum pod replicas (supports 0 when KEDA is enabled for scale-to-zero). |
 | autoscaling.maxReplicas | int | `3` | Maximum pod replicas. |
 | autoscaling.metrics | list | `[]` | Resource metrics targets. |
 | autoscaling.scaleUp | object | `{}` | Scale up behavior policy. |
 | autoscaling.scaleDown | object | `{}` | Scale down behavior policy. |
+| autoscaling.keda.enabled | bool | `false` | Enable KEDA autoscaling. Replaces standard HPA with KEDA ScaledObject. Ref: https://keda.sh/docs/latest/concepts/scaling-deployments/ |
+| autoscaling.keda.pollingInterval | int | `30` | Polling interval in seconds for KEDA to query metrics sources. |
+| autoscaling.keda.cooldownPeriod | int | `300` | Cooldown period in seconds before scaling back down to minReplicas. |
+| autoscaling.keda.idleReplicaCount | string | `""` | Idle replica count for sub-zero scaling if supported. |
+| autoscaling.keda.fallback | object | `{}` | Fallback configuration if metrics sources are unavailable. |
+| autoscaling.keda.advanced | object | `{}` | Advanced KEDA scaling parameters. |
+| autoscaling.keda.annotations | object | `{}` | ScaledObject additional annotations. |
+| autoscaling.keda.triggers | list | `[]` | Event triggers defining when and how to scale (supports all 60+ KEDA scalers). Ref: https://keda.sh/docs/latest/scalers/ |
+| autoscaling.keda.triggerAuthentications | list | `[]` | TriggerAuthentication specifications. Supports referencing existing secrets or creating them inline. Ref: https://keda.sh/docs/latest/concepts/authentication/ |
 | metrics.jobLabel | string | `"app_kubernetes_io_instance"` | Job label for ServiceMonitor metrics. Ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/user-guides/getting-started.md |
 | metrics.endpoints | list | `[]` | List of scrape endpoints. |
 

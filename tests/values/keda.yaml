@@ -1,0 +1,41 @@
+# KEDA enabled with scale-to-zero (minReplicas: 0) and Prometheus trigger
+autoscaling:
+  enabled: true
+  minReplicas: 0
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 80
+  scaleUp:
+    stabilizationWindowSeconds: 0
+    policies:
+      - type: Percent
+        value: 100
+        periodSeconds: 15
+    selectPolicy: Max
+  scaleDown:
+    stabilizationWindowSeconds: 300
+    policies:
+      - type: Pods
+        value: 1
+        periodSeconds: 60
+  keda:
+    enabled: true
+    pollingInterval: 15
+    cooldownPeriod: 120
+    idleReplicaCount: 0
+    fallback:
+      failureThreshold: 3
+      replicas: 2
+    triggers:
+      - type: prometheus
+        name: prom-trigger
+        metadata:
+          serverAddress: http://prometheus:9090
+          metricName: http_requests_total
+          threshold: "100"
+          query: sum(rate(http_requests_total[2m]))

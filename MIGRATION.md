@@ -7,6 +7,22 @@ To upgrade, apply every section after your pinned version up to the target, olde
 Newer sections are split into **Required** (the upgrade breaks or misbehaves without it),
 **Recommended** (aligns an existing chart with the current standards) and **Verify**.
 
+## 1.6.0
+
+### Required
+
+No migration required. Existing autoscaling configurations using native HPA remain 100% backward-compatible.
+
+### Recommended
+
+- Workloads requiring event-driven autoscaling (Kafka, RabbitMQ, SQS, Redis, Prometheus metrics, or scale-to-zero) can enable `autoscaling.keda.enabled: true`.
+- Workloads requiring East-West service mesh security (mTLS, JWT validation, L4/L7 authorization) or traffic management (canary splits, timeouts, circuit breaking, egress validation) can enable `serviceMesh.enabled: true`.
+- Workloads requiring custom pod-level labels can declare them under `pod.labels: {}`.
+
+### Verify
+
+- `helm lint --strict` and `helm template` pass on `values.yaml` and on each overlay.
+
 ## 1.5.0
 
 ### Required

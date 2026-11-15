@@ -1,5 +1,5 @@
 {{- define "tpl.hpa" }}
-{{- if and .Values.autoscaling.enabled .Values.autoscaling.metrics }}
+{{- if and .Values.autoscaling.enabled (not (and .Values.autoscaling.keda .Values.autoscaling.keda.enabled)) .Values.autoscaling.metrics }}
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:

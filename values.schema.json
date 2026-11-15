@@ -87,6 +87,10 @@
     "metrics": {
       "type": "object",
       "additionalProperties": true
+    },
+    "serviceMesh": {
+      "type": "object",
+      "additionalProperties": true
     }
   },
   "$defs": {
@@ -313,11 +317,51 @@
         },
         "minReplicas": {
           "type": "integer",
-          "minimum": 1
+          "minimum": 0
         },
         "maxReplicas": {
           "type": "integer",
           "minimum": 1
+        },
+        "keda": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "pollingInterval": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "cooldownPeriod": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "idleReplicaCount": {
+              "type": [
+                "integer",
+                "string"
+              ]
+            },
+            "minReplicaCount": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "maxReplicaCount": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "triggers": {
+              "type": "array"
+            },
+            "triggerAuthentications": {
+              "type": [
+                "array",
+                "object"
+              ]
+            }
+          }
         }
       }
     }

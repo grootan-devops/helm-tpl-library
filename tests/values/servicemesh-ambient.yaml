@@ -1,0 +1,13 @@
+component: frontend
+pod:
+  labels:
+    custom.io/tier: frontend-tier
+
+serviceMesh:
+  enabled: true
+  type: istio
+  istio:
+    waypoint:
+      enabled: true
+      name: shared-waypoint
+      namespace: istio-system

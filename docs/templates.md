@@ -20,6 +20,11 @@ release name and `C` = the component name:
 | Resource | Name |
 | --- | --- |
 | Deployment, default Service, ServiceAccount, HPA, PDB, NetworkPolicy, Ingress, HTTPRoute | `P-C` |
+| KEDA ScaledObject | `P-C` |
+| KEDA TriggerAuthentication (`triggerAuthentications` item `k`) | `P-C-k` (or `P-C` if unnamed) |
+| KEDA Secret (`triggerAuthentications` item `k` with `secret.create: true`) | `P-C-k-secret` (or `P-C-keda-auth-secret`) |
+| Istio PeerAuthentication | `P-C` (or `P-C-k` if custom name `k` set) |
+| Istio RequestAuthentication / AuthorizationPolicy / DestinationRule / externalServices (`k`) | `P-C-k` (or `P-C` if unnamed) |
 | Service under another `service.<k>` key | `P-C-k` |
 | Env ConfigMap and Secret of container key `k` | `P-C-k-env` |
 | Job `jobs.<j>` and CronJob `cronjobs.<j>` | `P-C-j` |
@@ -117,7 +122,19 @@ By default, a stateless application chart needs only the core deployment umbrell
 {{- include "tpl.deployment" . }}
 ```
 
-`tpl.deployment` renders the workload and everything the pod references (Service, routes, ServiceAccount, PDB, NetworkPolicy, HPA, ConfigMaps and Secrets).
+`tpl.deployment` renders the workload and everything the pod references (Service, routes, ServiceAccount, PDB, NetworkPolicy, HPA or KEDA ScaledObject/TriggerAuthentication/Secret, ConfigMaps and Secrets).
+
+### KEDA Autoscaling (`tpl.keda.scaledobject` / `tpl.keda.triggerauthentication` / `tpl.keda`)
+
+When `autoscaling.enabled` and `autoscaling.keda.enabled` are `true`, `tpl.deployment` automatically invokes `tpl.keda` (rendering `ScaledObject`, `TriggerAuthentication`s and inline `Secret`s) and suppresses native `HorizontalPodAutoscaler` (`tpl.hpa`) so KEDA manages 0 ↔ 1 and 1 ↔ N scaling without dual-controller contention.
+
+If needed, templates can also be invoked standalone:
+
+```gotmpl
+{{- include "tpl.keda.triggerauthentication" . }}
+---
+{{- include "tpl.keda.scaledobject" . }}
+```
 
 ### Optional Resource Invocations
 
@@ -213,5 +230,22 @@ In microservices architectures deployed under a shared product or release prefix
   configmapEnvs: |
     CART_SERVICE_URL: '{{ tpl .Values.cart.internalUrl $ | default (printf "http://%s:8080" (include "tpl.resource.siblingName" (merge (dict "name" "cart-backend") .))) }}'
   ```
+
+## Service Mesh Templates
+
+Service Mesh templates separate generic orchestrators from provider-specific implementations:
+
+- **Generic Service Mesh Helpers (`tpl.mesh.*`)**:
+  - `tpl.mesh`: Provider-agnostic coordinator called from `tpl.deployment` to render active mesh resources based on `serviceMesh.type`.
+  - `tpl.mesh.waypoint.podLabels`: Injects waypoint labels onto the Pod template if enabled.
+  - `tpl.mesh.waypoint.serviceLabels`: Injects waypoint labels onto the Service metadata if enabled.
+- **Istio Provider Templates (`tpl.mesh.istio.*`)**:
+  - `tpl.mesh.istio`: Coordinates all enabled Istio resources.
+  - `tpl.mesh.istio.peerauthentication`: Renders `security.istio.io/v1` `PeerAuthentication`.
+  - `tpl.mesh.istio.requestauthentication`: Renders `security.istio.io/v1` `RequestAuthentication`.
+  - `tpl.mesh.istio.authorizationpolicy`: Renders `security.istio.io/v1` `AuthorizationPolicy`.
+  - `tpl.mesh.istio.destinationrule`: Renders `networking.istio.io/v1` `DestinationRule`.
+  - `tpl.mesh.istio.externalservices`: Renders `ServiceEntry` + `BackendTLSPolicy` + `DestinationRule` for external endpoints.
+  - `tpl.mesh.istio.waypoint.podLabels` & `tpl.mesh.istio.waypoint.serviceLabels`: Generates `istio.io/use-waypoint` labels.
 
 [Documentation index](../README.md)

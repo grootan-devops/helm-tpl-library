@@ -1,0 +1,247 @@
+suite: service mesh istio (_mesh.tpl)
+templates:
+  - templates/stack.yaml
+release:
+  name: rel
+  namespace: default
+tests:
+  - it: renders no service mesh objects by default
+    asserts:
+      - hasDocuments:
+          count: 4
+
+  - it: renders ambient waypoint labels exclusively on Service (not Deployment)
+    values:
+      - ../values/servicemesh-ambient.yaml
+    asserts:
+      - equal:
+          path: metadata.labels["istio.io/use-waypoint"]
+          value: shared-waypoint
+        documentSelector:
+          path: kind
+          value: Service
+      - equal:
+          path: metadata.labels["istio.io/use-waypoint-namespace"]
+          value: istio-system
+        documentSelector:
+          path: kind
+          value: Service
+      - notExists:
+          path: spec.template.metadata.labels["istio.io/use-waypoint"]
+        documentSelector:
+          path: kind
+          value: Deployment
+      - equal:
+          path: spec.template.metadata.labels["custom.io/tier"]
+          value: frontend-tier
+        documentSelector:
+          path: kind
+          value: Deployment
+
+  - it: renders PeerAuthentication with STRICT mTLS and PERMISSIVE port exception
+    values:
+      - ../values/servicemesh-security.yaml
+    asserts:
+      - isKind:
+          of: PeerAuthentication
+        documentSelector:
+          path: kind
+          value: PeerAuthentication
+      - isAPIVersion:
+          of: security.istio.io/v1
+        documentSelector:
+          path: kind
+          value: PeerAuthentication
+      - equal:
+          path: spec.mtls.mode
+          value: STRICT
+        documentSelector:
+          path: kind
+          value: PeerAuthentication
+      - equal:
+          path: spec.portLevelMtls["9898"].mode
+          value: PERMISSIVE
+        documentSelector:
+          path: kind
+          value: PeerAuthentication
+      - equal:
+          path: spec.selector.matchLabels["app.kubernetes.io/name"]
+          value: rel-backend-api
+        documentSelector:
+          path: kind
+          value: PeerAuthentication
+
+  - it: renders RequestAuthentication for JWT validation
+    values:
+      - ../values/servicemesh-security.yaml
+    asserts:
+      - isKind:
+          of: RequestAuthentication
+        documentSelector:
+          path: kind
+          value: RequestAuthentication
+      - isAPIVersion:
+          of: security.istio.io/v1
+        documentSelector:
+          path: kind
+          value: RequestAuthentication
+      - equal:
+          path: spec.jwtRules[0].issuer
+          value: https://auth.dev.grootan.com/realms/grootan
+        documentSelector:
+          path: kind
+          value: RequestAuthentication
+      - equal:
+          path: spec.jwtRules[0].forwardOriginalToken
+          value: true
+        documentSelector:
+          path: kind
+          value: RequestAuthentication
+
+  - it: renders AuthorizationPolicies for L4 and L7 enforcement
+    values:
+      - ../values/servicemesh-security.yaml
+    asserts:
+      - equal:
+          path: metadata.name
+          value: rel-backend-api-redis-l4-allow
+        documentSelector:
+          path: metadata.name
+          value: rel-backend-api-redis-l4-allow
+      - equal:
+          path: spec.rules[0].from[0].source.principals[0]
+          value: cluster.local/ns/app-1/sa/frontend
+        documentSelector:
+          path: metadata.name
+          value: rel-backend-api-redis-l4-allow
+      - equal:
+          path: metadata.name
+          value: rel-backend-api-waypoint-l7-rbac
+        documentSelector:
+          path: metadata.name
+          value: rel-backend-api-waypoint-l7-rbac
+      - equal:
+          path: spec.rules[0].to[0].operation.paths[0]
+          value: /api/*
+        documentSelector:
+          path: metadata.name
+          value: rel-backend-api-waypoint-l7-rbac
+
+  - it: renders DestinationRule with load balancing, connection pool, and subsets
+    values:
+      - ../values/servicemesh-traffic.yaml
+    asserts:
+      - isKind:
+          of: DestinationRule
+        documentSelector:
+          path: metadata.name
+          value: rel-backend-api-backend-policy
+      - isAPIVersion:
+          of: networking.istio.io/v1
+        documentSelector:
+          path: metadata.name
+          value: rel-backend-api-backend-policy
+      - equal:
+          path: spec.trafficPolicy.loadBalancer.simple
+          value: LEAST_REQUEST
+        documentSelector:
+          path: metadata.name
+          value: rel-backend-api-backend-policy
+      - equal:
+          path: spec.trafficPolicy.connectionPool.tcp.maxConnections
+          value: 100
+        documentSelector:
+          path: metadata.name
+          value: rel-backend-api-backend-policy
+      - equal:
+          path: spec.subsets[0].name
+          value: v1
+        documentSelector:
+          path: metadata.name
+          value: rel-backend-api-backend-policy
+
+  - it: renders combined externalServices (ServiceEntry, BackendTLSPolicy, DestinationRule)
+    values:
+      - ../values/servicemesh-traffic.yaml
+    asserts:
+      - isKind:
+          of: ServiceEntry
+        documentSelector:
+          path: metadata.name
+          value: rel-backend-api-ext-httpbin-org
+      - equal:
+          path: spec.hosts[0]
+          value: httpbin.org
+        documentSelector:
+          path: metadata.name
+          value: rel-backend-api-ext-httpbin-org
+      - equal:
+          path: spec.hosts[1]
+          value: example.com
+        documentSelector:
+          path: metadata.name
+          value: rel-backend-api-ext-httpbin-org
+      - equal:
+          path: spec.ports[0].number
+          value: 80
+        documentSelector:
+          path: metadata.name
+          value: rel-backend-api-ext-httpbin-org
+      - equal:
+          path: spec.ports[0].targetPort
+          value: 443
+        documentSelector:
+          path: metadata.name
+          value: rel-backend-api-ext-httpbin-org
+      - equal:
+          path: spec.location
+          value: MESH_EXTERNAL
+        documentSelector:
+          path: metadata.name
+          value: rel-backend-api-ext-httpbin-org
+      - equal:
+          path: spec.resolution
+          value: DNS
+        documentSelector:
+          path: metadata.name
+          value: rel-backend-api-ext-httpbin-org
+      - isKind:
+          of: BackendTLSPolicy
+        documentSelector:
+          path: metadata.name
+          value: rel-backend-api-btp-httpbin-org
+      - equal:
+          path: spec.validation.hostname
+          value: httpbin.org
+        documentSelector:
+          path: metadata.name
+          value: rel-backend-api-btp-httpbin-org
+      - equal:
+          path: spec.validation.wellKnownCACertificates
+          value: System
+        documentSelector:
+          path: metadata.name
+          value: rel-backend-api-btp-httpbin-org
+      - equal:
+          path: spec.targetRefs[0].name
+          value: rel-backend-api-ext-httpbin-org
+        documentSelector:
+          path: metadata.name
+          value: rel-backend-api-btp-httpbin-org
+      - isKind:
+          of: DestinationRule
+        documentSelector:
+          path: metadata.name
+          value: rel-backend-api-dr-ext-httpbin-org
+      - equal:
+          path: spec.trafficPolicy.tls.mode
+          value: SIMPLE
+        documentSelector:
+          path: metadata.name
+          value: rel-backend-api-dr-ext-httpbin-org
+      - equal:
+          path: spec.trafficPolicy.tls.sni
+          value: httpbin.org
+        documentSelector:
+          path: metadata.name
+          value: rel-backend-api-dr-ext-httpbin-org

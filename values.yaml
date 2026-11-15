@@ -337,6 +337,12 @@ pod:
   # annotations:
   #   prometheus.io/scrape: "true"
   #   prometheus.io/port: "8080"
+  # -- Additional labels to add to the Pod metadata.
+  # @section -- Workload Settings
+  labels: {}
+  ### Example
+  # labels:
+  #   istio.io/dataplane-mode: ambient
 
   # -- Pod-level Security Context (applied to all containers).
   # Ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
@@ -740,11 +746,11 @@ pdb:
   maxUnavailable: 2
 
 autoscaling:
-  # -- Enable HPA.
+  # -- Enable autoscaling. When autoscaling.keda.enabled is false, renders standard Kubernetes HPA. When true, renders KEDA ScaledObject.
   # Ref: https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/
   # @section -- Operations Settings
   enabled: false
-  # -- Minimum pod replicas.
+  # -- Minimum pod replicas (supports 0 when KEDA is enabled for scale-to-zero).
   # @section -- Operations Settings
   minReplicas: 1
   # -- Maximum pod replicas.
@@ -784,6 +790,81 @@ autoscaling:
   #     value: 4
   #     periodSeconds: 15
   #   selectPolicy: Max
+  keda:
+    # -- Enable KEDA autoscaling. Replaces standard HPA with KEDA ScaledObject.
+    # Ref: https://keda.sh/docs/latest/concepts/scaling-deployments/
+    # @section -- Operations Settings
+    enabled: false
+    # -- Polling interval in seconds for KEDA to query metrics sources.
+    # @section -- Operations Settings
+    pollingInterval: 30
+    # -- Cooldown period in seconds before scaling back down to minReplicas.
+    # @section -- Operations Settings
+    cooldownPeriod: 300
+    # -- Idle replica count for sub-zero scaling if supported.
+    # @section -- Operations Settings
+    idleReplicaCount: ""
+    # -- Fallback configuration if metrics sources are unavailable.
+    # @section -- Operations Settings
+    fallback: {}
+    ### Example
+    # fallback:
+    #   failureThreshold: 3
+    #   replicas: 2
+    # -- Advanced KEDA scaling parameters.
+    # @section -- Operations Settings
+    advanced: {}
+    ### Example
+    # advanced:
+    #   restoreToOriginalReplicaCount: true
+    # -- ScaledObject additional annotations.
+    # @section -- Operations Settings
+    annotations: {}
+    # -- Event triggers defining when and how to scale (supports all 60+ KEDA scalers).
+    # Ref: https://keda.sh/docs/latest/scalers/
+    # @section -- Operations Settings
+    triggers: []
+    ### Examples
+    # triggers:
+    #   - type: prometheus
+    #     metadata:
+    #       serverAddress: http://prometheus-k8s.monitoring.svc:9090
+    #       metricName: http_requests_total
+    #       query: sum(rate(http_requests_total[2m]))
+    #       threshold: "100"
+    #   - type: rabbitmq
+    #     metadata:
+    #       protocol: amqp
+    #       queueName: orders
+    #       mode: QueueLength
+    #       value: "20"
+    #     authenticationRef:
+    #       name: rabbitmq-auth
+    #   - type: cron
+    #     metadata:
+    #       timezone: UTC
+    #       start: "0 6 * * *"
+    #       end: "0 18 * * *"
+    #       desiredReplicas: "10"
+    # -- TriggerAuthentication specifications. Supports referencing existing secrets or creating them inline.
+    # Ref: https://keda.sh/docs/latest/concepts/authentication/
+    # @section -- Operations Settings
+    triggerAuthentications: []
+    ### Examples
+    # triggerAuthentications:
+    #   - name: rabbitmq-auth
+    #     secretTargetRef:
+    #       - parameter: host
+    #         name: rabbitmq-secret
+    #         key: host
+    #   - name: redis-auth
+    #     secret:
+    #       create: true
+    #       data:
+    #         password: ""
+    #     secretTargetRef:
+    #       - parameter: password
+    #         key: password
 
 metrics:
   # -- Job label for ServiceMonitor metrics.
@@ -799,3 +880,103 @@ metrics:
   #     path: /metrics
   #     interval: 15s
   #     scrapeTimeout: 10s
+
+serviceMesh:
+  # -- Enable Service Mesh resources for East-West traffic.
+  # @section -- Networking Settings
+  enabled: false
+  # -- Mesh provider. Currently supports 'istio'.
+  # @section -- Networking Settings
+  type: istio
+  istio:
+    waypoint:
+      # -- Enable automatic waypoint label attachment to Service.
+      # @section -- Networking Settings
+      enabled: false
+      # -- Name of the Waypoint gateway (e.g. 'shared-waypoint').
+      # @section -- Networking Settings
+      name: shared-waypoint
+      # -- Namespace where the Waypoint gateway lives (e.g. 'istio-system').
+      # @section -- Networking Settings
+      namespace: istio-system
+    # -- PeerAuthentication specification (inbound mTLS mode and port exceptions).
+    # Ref: https://istio.io/latest/docs/reference/config/security/peer_authentication/
+    # @section -- Networking Settings
+    peerAuthentication: {}
+    ### Example
+    # peerAuthentication:
+    #   enabled: true
+    #   mtls:
+    #     mode: STRICT
+    #   portLevelMtls:
+    #     "9898":
+    #       mode: PERMISSIVE
+    # -- RequestAuthentication specifications (validating JWT tokens).
+    # Ref: https://istio.io/latest/docs/reference/config/security/request-authentication/
+    # @section -- Networking Settings
+    requestAuthentications: []
+    ### Example
+    # requestAuthentications:
+    #   - name: keycloak-jwt
+    #     jwtRules:
+    #       - issuer: "https://auth.dev.grootan.com/realms/grootan"
+    #         jwksUri: "http://keycloak.auth.svc.cluster.local:8080/realms/grootan/protocol/openid-connect/certs"
+    #         forwardOriginalToken: true
+    # -- AuthorizationPolicy specifications (L4 identity and L7 RBAC/claims).
+    # Ref: https://istio.io/latest/docs/reference/config/security/authorization-policy/
+    # @section -- Networking Settings
+    authorizationPolicies: []
+    ### Example
+    # authorizationPolicies:
+    #   - name: service-rbac
+    #     action: ALLOW
+    #     rules:
+    #       - from:
+    #           - source:
+    #               principals: ["cluster.local/ns/app-1/sa/frontend"]
+    #         to:
+    #           - operation:
+    #               methods: ["GET"]
+    #               paths: ["/api/*"]
+    # -- DestinationRule specifications (client traffic policy, circuit breaking, subsets).
+    # Ref: https://istio.io/latest/docs/reference/config/networking/destination-rule/
+    # @section -- Networking Settings
+    destinationRules: []
+    ### Example
+    # destinationRules:
+    #   - name: backend-policy
+    #     trafficPolicy:
+    #       loadBalancer:
+    #         simple: LEAST_REQUEST
+    #       connectionPool:
+    #         tcp:
+    #           maxConnections: 100
+    #         http:
+    #           http1MaxPendingRequests: 50
+    #       outlierDetection:
+    #         consecutive5xxErrors: 3
+    #         interval: 10s
+    #         baseEjectionTime: 30s
+    #     subsets:
+    #       - name: v1
+    #         labels:
+    #           version: v1
+    # -- External services shorthand. Automatically creates ServiceEntry (MESH_EXTERNAL/DNS),
+    # BackendTLSPolicy (System CA validation), and DestinationRule (SIMPLE TLS origination from port 80 to 443).
+    # Ref: https://istio.io/latest/docs/tasks/traffic-management/egress/egress-tls-origination/
+    # @section -- Networking Settings
+    externalServices: []
+    ### Example
+    # externalServices:
+    #   - host:
+    #       - httpbin.org
+    #       - example.com
+    ### Advanced Example
+    # externalServices:
+    #   - name: custom-api
+    #     host: api.github.com
+    #     number: 80
+    #     targetPort: 443
+    #     mode: SIMPLE
+    #     wellKnownCACertificates: System
+    #     tls: true

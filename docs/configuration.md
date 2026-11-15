@@ -245,7 +245,7 @@ configmapEnvs: |
   the root of its own values, so the subchart's values section is validated empty — any
   required key there would fail every consumer's render.
 - Types and enums only: `replicas` must be an integer, `restartPolicy` one of
-  `Always`/`OnFailure`/`Never`, `autoscaling.minReplicas` at least 1. Unknown keys are
+  `Always`/`OnFailure`/`Never`, `autoscaling.minReplicas` at least 0 (allowing KEDA scale-to-zero). Unknown keys are
   allowed, so the schema catches typos and wrong types without blocking a valid config.
 
 A consumer schema keeps the library's definitions for the workload keys and states the
@@ -278,5 +278,18 @@ What the rendered manifest grants, reviewed for its blast radius:
 - **Resource limits** are set; one unlimited pod can starve a shared node.
 - **Routes** expose only what is meant to be public; a worker or internal API with a public
   host is usually a mistake.
+
+## East-West Service Mesh (Istio Ambient Mode)
+
+`serviceMesh:` provides native Istio support specifically for **East-West** (mesh service-to-service) traffic, keeping North-South ingress independently managed via `routes:` (e.g. APISIX, Traefik).
+
+- **Ambient Mode (Sidecarless)**: Workloads leverage node-level `ztunnel` for zero-overhead L4 HBONE mTLS and SPIFFE identity. Enabling `waypoint:` attaches `istio.io/use-waypoint` to the Service (recommended in modern Istio) or Pod template metadata for L7 policies.
+- **Zero-Trust Security**:
+  - `peerAuthentication`: Controls inbound mTLS (`STRICT` or `PERMISSIVE`), with port-level exceptions for unmeshed callers (e.g. Prometheus metrics scraping on `:9898`).
+  - `requestAuthentications`: Validates JWT tokens issued by IDPs (e.g. Keycloak).
+  - `authorizationPolicies`: Enforces L4 SPIFFE identity or L7 HTTP methods, paths, and JWT role claims.
+- **Mesh Egress & Resilience**:
+  - `externalServices`: High-level configuration that automatically generates `ServiceEntry` (MESH_EXTERNAL, DNS), `BackendTLSPolicy` (System CA validation), and `DestinationRule` (SIMPLE TLS origination from port 80 to 443) for 3rd-party external domains from a simple host list.
+  - `destinationRules`: Sets connection pool thresholds, circuit breaking (`outlierDetection`), and load balancer algorithms for internal mesh destinations.
 
 [Documentation index](../README.md)

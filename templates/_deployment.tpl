@@ -65,7 +65,11 @@ spec:
         {{- if .Values.pod.annotations }}
         {{ .Values.pod.annotations | toYaml | nindent 8 }}
         {{- end }}
-      labels: {{- include "tpl.labels" . | nindent 8 }}
+      labels:
+        {{- include "tpl.labels" . | nindent 8 }}
+        {{- with .Values.pod.labels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
     spec: {{- include "tpl.pod.spec" (merge (dict "_container" .Values) $) | nindent 6 }}
 ---
 {{- include "tpl.service" . }}
@@ -101,6 +105,13 @@ spec:
 ---
 {{ include "tpl.networkpolicy" . }}
 ---
+{{- if and .Values.autoscaling.enabled (and .Values.autoscaling.keda .Values.autoscaling.keda.enabled) }}
+{{ include "tpl.keda" . }}
+{{- else }}
 {{ include "tpl.hpa" . }}
+{{- end }}
+{{- if and .Values.serviceMesh .Values.serviceMesh.enabled }}
+{{ include "tpl.mesh" . }}
+{{- end }}
 ---
 {{- end }}

@@ -1,0 +1,17 @@
+# KEDA referencing external ClusterTriggerAuthentication
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 8
+  keda:
+    enabled: true
+    triggers:
+      - type: kafka
+        metadata:
+          bootstrapServers: kafka:9092
+          consumerGroup: group-1
+          topic: test-topic
+          lagThreshold: "50"
+        authenticationRef:
+          kind: ClusterTriggerAuthentication
+          name: global-kafka-auth

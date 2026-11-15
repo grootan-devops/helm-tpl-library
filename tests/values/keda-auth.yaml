@@ -1,0 +1,37 @@
+# KEDA with TriggerAuthentications: one referencing existing secret, one creating secret inline
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 5
+  keda:
+    enabled: true
+    triggers:
+      - type: rabbitmq
+        metadata:
+          protocol: amqp
+          queueName: orders
+          mode: QueueLength
+          value: "10"
+        authenticationRef:
+          name: rabbitmq-auth
+      - type: redis
+        metadata:
+          address: redis:6379
+          listName: tasks
+          listLength: "5"
+        authenticationRef:
+          name: redis-auth
+    triggerAuthentications:
+      - name: rabbitmq-auth
+        secretTargetRef:
+          - parameter: host
+            name: existing-rabbitmq-secret
+            key: host
+      - name: redis-auth
+        secret:
+          create: true
+          data:
+            password: "s3cret-password"
+        secretTargetRef:
+          - parameter: password
+            key: password

@@ -1,0 +1,41 @@
+component: backend
+
+serviceMesh:
+  enabled: true
+  type: istio
+  istio:
+    peerAuthentication:
+      enabled: true
+      mtls:
+        mode: STRICT
+      portLevelMtls:
+        "9898":
+          mode: PERMISSIVE
+    requestAuthentications:
+      - name: keycloak-jwt
+        jwtRules:
+          - issuer: "https://auth.dev.grootan.com/realms/grootan"
+            jwksUri: "http://keycloak.auth.svc.cluster.local:8080/realms/grootan/protocol/openid-connect/certs"
+            forwardOriginalToken: true
+    authorizationPolicies:
+      - name: redis-l4-allow
+        action: ALLOW
+        rules:
+          - from:
+              - source:
+                  principals:
+                    - "cluster.local/ns/app-1/sa/frontend"
+            to:
+              - operation:
+                  ports: ["6379"]
+      - name: waypoint-l7-rbac
+        action: ALLOW
+        rules:
+          - from:
+              - source:
+                  principals:
+                    - "cluster.local/ns/app-1/sa/frontend"
+            to:
+              - operation:
+                  methods: ["GET", "POST"]
+                  paths: ["/api/*"]

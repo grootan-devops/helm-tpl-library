@@ -1,0 +1,185 @@
+suite: keda autoscaling (_keda.tpl)
+templates:
+  - templates/stack.yaml
+release:
+  name: rel
+  namespace: default
+tests:
+  - it: renders no ScaledObject by default
+    asserts:
+      - hasDocuments:
+          count: 4
+
+  - it: renders ScaledObject, suppresses native HPA, and drops Deployment replicas
+    values:
+      - ../values/keda.yaml
+    asserts:
+      - hasDocuments:
+          count: 5
+      - isKind:
+          of: ScaledObject
+        documentSelector:
+          path: kind
+          value: ScaledObject
+      - isAPIVersion:
+          of: keda.sh/v1alpha1
+        documentSelector:
+          path: kind
+          value: ScaledObject
+      - equal:
+          path: spec.scaleTargetRef
+          value:
+            apiVersion: apps/v1
+            kind: Deployment
+            name: rel-shop-api
+        documentSelector:
+          path: kind
+          value: ScaledObject
+      - equal:
+          path: spec.minReplicaCount
+          value: 0
+        documentSelector:
+          path: kind
+          value: ScaledObject
+      - equal:
+          path: spec.maxReplicaCount
+          value: 10
+        documentSelector:
+          path: kind
+          value: ScaledObject
+      - equal:
+          path: spec.pollingInterval
+          value: 15
+        documentSelector:
+          path: kind
+          value: ScaledObject
+      - equal:
+          path: spec.cooldownPeriod
+          value: 120
+        documentSelector:
+          path: kind
+          value: ScaledObject
+      - equal:
+          path: spec.idleReplicaCount
+          value: 0
+        documentSelector:
+          path: kind
+          value: ScaledObject
+      - equal:
+          path: spec.fallback.failureThreshold
+          value: 3
+        documentSelector:
+          path: kind
+          value: ScaledObject
+      - equal:
+          path: spec.fallback.replicas
+          value: 2
+        documentSelector:
+          path: kind
+          value: ScaledObject
+      - equal:
+          path: spec.advanced.horizontalPodAutoscalerConfig.behavior.scaleUp.selectPolicy
+          value: Max
+        documentSelector:
+          path: kind
+          value: ScaledObject
+      - equal:
+          path: spec.advanced.horizontalPodAutoscalerConfig.behavior.scaleDown.stabilizationWindowSeconds
+          value: 300
+        documentSelector:
+          path: kind
+          value: ScaledObject
+      - equal:
+          path: spec.triggers[0].type
+          value: prometheus
+        documentSelector:
+          path: kind
+          value: ScaledObject
+      - equal:
+          path: spec.triggers[0].name
+          value: prom-trigger
+        documentSelector:
+          path: kind
+          value: ScaledObject
+      - equal:
+          path: spec.triggers[0].metadata.threshold
+          value: "100"
+        documentSelector:
+          path: kind
+          value: ScaledObject
+      - notExists:
+          path: spec.replicas
+        documentSelector:
+          path: kind
+          value: Deployment
+
+  - it: renders TriggerAuthentication and generated Secret when secret.create is true
+    values:
+      - ../values/keda-auth.yaml
+    asserts:
+      - isKind:
+          of: TriggerAuthentication
+        documentSelector:
+          path: metadata.name
+          value: rel-shop-api-rabbitmq-auth
+      - equal:
+          path: spec.secretTargetRef[0]
+          value:
+            key: host
+            name: existing-rabbitmq-secret
+            parameter: host
+        documentSelector:
+          path: metadata.name
+          value: rel-shop-api-rabbitmq-auth
+      - isKind:
+          of: TriggerAuthentication
+        documentSelector:
+          path: metadata.name
+          value: rel-shop-api-redis-auth
+      - equal:
+          path: spec.secretTargetRef[0]
+          value:
+            key: password
+            name: rel-shop-api-redis-auth-secret
+            parameter: password
+        documentSelector:
+          path: metadata.name
+          value: rel-shop-api-redis-auth
+      - isKind:
+          of: Secret
+        documentSelector:
+          path: metadata.name
+          value: rel-shop-api-redis-auth-secret
+      - equal:
+          path: data.password
+          value: czNjcmV0LXBhc3N3b3Jk
+        documentSelector:
+          path: metadata.name
+          value: rel-shop-api-redis-auth-secret
+      - equal:
+          path: spec.triggers[0].authenticationRef.name
+          value: rel-shop-api-rabbitmq-auth
+        documentSelector:
+          path: kind
+          value: ScaledObject
+      - equal:
+          path: spec.triggers[1].authenticationRef.name
+          value: rel-shop-api-redis-auth
+        documentSelector:
+          path: kind
+          value: ScaledObject
+
+  - it: supports ClusterTriggerAuthentication reference
+    values:
+      - ../values/keda-clustertriggerauth.yaml
+    asserts:
+      - hasDocuments:
+          count: 5
+      - equal:
+          path: spec.triggers[0].authenticationRef
+          value:
+            kind: ClusterTriggerAuthentication
+            name: global-kafka-auth
+        documentSelector:
+          path: kind
+          value: ScaledObject
